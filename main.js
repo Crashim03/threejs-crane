@@ -95,8 +95,15 @@ class Input {
     }
 }
 
-// TODO: MORE CLASSES ;)
+class HUD {
+    // TODO
+}
 
+class CRANE {
+    // TODO
+}
+
+// TODO: this should be in a class
 let SCREEN_WIDTH = window.innerWidth;
 let SCREEN_HEIGHT = window.innerHeight;
 const aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
@@ -139,7 +146,7 @@ const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
-const input = new Input();
+new Input();
 let currentCamera = cameras[0];
 
 document.addEventListener("switchCameraEvent", switchCamera);
