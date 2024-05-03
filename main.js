@@ -242,14 +242,16 @@ class Cameras {
       1,
       1000
     );
-    fixedOrtCamera.position.set(new THREE.Vector3(100, 100, 100));
+    fixedOrtCamera.position.set(100, 100, 100);
     fixedOrtCamera.lookAt(0, 0, 0);
 
     const fixedPersCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    fixedOrtCamera.position.set(new THREE.Vector3(100, 100, 100));
+    fixedPersCamera.position.set(100, 100, 100);
     fixedPersCamera.lookAt(0, 0, 0);
 
     const movableCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+    movableCamera.position.set(100, 100, 100);
+    movableCamera.lookAt(0, 0, 0);
 
     this.cameras = [
       frontalCamera,
@@ -296,6 +298,7 @@ class MainScene {
     const geometry = new THREE.BoxGeometry(100, 100, 100);
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
+    // cube.position.set(50, 50, 50);
     this.scene.add(cube);
     this.scene.add(new THREE.AxesHelper(100000));
     this.animate = this.animate.bind(this);
