@@ -114,7 +114,7 @@ class Input {
   }
 
   dispatchElevateCraneEvent(direction, isPressed) {
-    const elevateCranteEvent = new CustomEvent("elevateCranteEvent", {
+    const elevateCranteEvent = new CustomEvent("elevateCraneEvent", {
       detail: { direction: direction, isPressed: isPressed },
     });
     document.dispatchEvent(elevateCranteEvent);
@@ -191,10 +191,66 @@ class HUD {
 
 class Crane {
   // TODO
+  constructor() {
+    this.clock = new THREE.Clock();
+    this.crane = new THREE.Group();
+
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.green,
+    });
+
+    let base = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 20), material);
+    base.position.set(22.5, -5, 0);
+
+    this.tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(5, 5, 90, 3),
+      material
+    );
+    this.tower.position.set(22.5, 45, 0);
+
+    this.topCrane = new THREE.Group();
+    let topBackCrane = new THREE.Group();
+
+    let counterWeight = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 15, 5),
+      material
+    );
+    counterWeight.position.set(5, 93, 0);
+
+    let counterJib = new THREE.Mesh(
+      new THREE.CylinderGeometry(5, 5, 50, 3),
+      material
+    );
+    counterJib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    counterJib.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+    counterJib.position.set(15, 90, 0);
+
+    topBackCrane.add(counterJib);
+
+    this.topCrane.add(topBackCrane);
+    this.crane.add(base, this.tower, this.topCrane);
+
+    document.addEventListener(
+      "rotateCraneEvent",
+      this.handleRotateCrane.bind(this)
+    );
+  }
+
+  handleRotateCrane(event) {
+    if (!event.detail.isPressed) {
+      return;
+    }
+
+    console.log("Rotating crane...");
+    this.topCrane.rotateOnAxis(
+      new THREE.Vector3(0, 1, 0),
+      1 * event.detail.direction * this.clock.getDelta()
+    );
+  }
 }
 
 class Cameras {
-  constructor() {
+  constructor(crane) {
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
 
@@ -209,7 +265,7 @@ class Cameras {
       1,
       1000
     );
-    frontalCamera.position.z = 100;
+    frontalCamera.position.z = 150;
     frontalCamera.lookAt(0, 0, 0);
 
     const lateralCamera = new THREE.OrthographicCamera(
@@ -220,7 +276,7 @@ class Cameras {
       1,
       1000
     );
-    lateralCamera.position.x = 100;
+    lateralCamera.position.x = 150;
     lateralCamera.lookAt(0, 0, 0);
 
     const topCamera = new THREE.OrthographicCamera(
@@ -231,7 +287,7 @@ class Cameras {
       1,
       1000
     );
-    topCamera.position.y = 100;
+    topCamera.position.y = 150;
     topCamera.lookAt(0, 0, 0);
 
     const fixedOrtCamera = new THREE.OrthographicCamera(
@@ -242,15 +298,15 @@ class Cameras {
       1,
       1000
     );
-    fixedOrtCamera.position.set(100, 100, 100);
+    fixedOrtCamera.position.set(150, 150, 150);
     fixedOrtCamera.lookAt(0, 0, 0);
 
     const fixedPersCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    fixedPersCamera.position.set(100, 100, 100);
+    fixedPersCamera.position.set(150, 150, 150);
     fixedPersCamera.lookAt(0, 0, 0);
 
     const movableCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    movableCamera.position.set(100, 100, 100);
+    movableCamera.position.set(150, 150, 150);
     movableCamera.lookAt(0, 0, 0);
 
     this.cameras = [
@@ -282,7 +338,7 @@ class Cameras {
 }
 
 class MainScene {
-  constructor(cameras) {
+  constructor(crane, cameras) {
     this.cameras = cameras;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("lightblue");
@@ -294,14 +350,10 @@ class MainScene {
     this.renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     document.body.appendChild(this.renderer.domElement);
 
-    // TODO: remove cube
-    const geometry = new THREE.BoxGeometry(100, 100, 100);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    // cube.position.set(50, 50, 50);
-    this.scene.add(cube);
     this.scene.add(new THREE.AxesHelper(100000));
     this.animate = this.animate.bind(this);
+
+    this.scene.add(crane.crane);
   }
 
   animate() {
@@ -310,7 +362,11 @@ class MainScene {
   }
 }
 
+// TODO: macros for crane sizes and positions
+
 new Input();
 new HUD();
-let mainScene = new MainScene(new Cameras());
+let crane = new Crane();
+let cameras = new Cameras(crane);
+let mainScene = new MainScene(crane, cameras);
 mainScene.animate();
