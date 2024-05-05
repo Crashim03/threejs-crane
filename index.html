@@ -1,15 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Crane</title>
-    <style>
-      body {
-        margin: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <script type="module" src="/main.js"></script>
-  </body>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Crane</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    .container {
+      position: absolute;
+    }
+
+    .key {
+      position: relative;
+      display: inline-block;
+      padding: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div>
+      <img id="key1" class="key" src="./1-KeyNotPressed.png" alt="key-pressed">
+      <img id="key2" class="key" src="./2-KeyNotPressed.png" alt="key-pressed">
+      <img id="key3" class="key" src="./3-KeyNotPressed.png" alt="key-pressed">
+      <img id="key4" class="key" src="./4-KeyNotPressed.png" alt="key-pressed">
+      <img id="key5" class="key" src="./5-KeyNotPressed.png" alt="key-pressed">
+      <img id="key6" class="key" src="./6-KeyNotPressed.png" alt="key-pressed">
+    </div>
+    <div>
+      <img id="keyQ" class="key" src="./Q-KeyNotPressed.png" alt="key-pressed">
+      <img id="keyA" class="key" src="./A-KeyNotPressed.png" alt="key-pressed">
+      <img id="keyW" class="key" src="./W-KeyNotPressed.png" alt="key-pressed">
+      <img id="keyS" class="key" src="./S-KeyNotPressed.png" alt="key-pressed">
+      <img id="keyE" class="key" src="./E-KeyNotPressed.png" alt="key-pressed">
+      <img id="keyD" class="key" src="./D-KeyNotPressed.png" alt="key-pressed">
+
+    </div>
+  </div>
+
+  <!-- NOTE: the idea here is to use javascript to change the state of the images to hidden or shown -->
+
+  <script type="module" src="/main.js"></script>
+  <script src="image_manipulator.js"></script>
+</body>
+
 </html>
