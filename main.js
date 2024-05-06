@@ -187,7 +187,7 @@ class Claws {
     
     this.upper_claws = new THREE.Group();
     this.lower_claws = new THREE.Group();
-    this.claws = new THREE.Group();
+    this.clawsModels = new THREE.Group();
 
     let height = 4;
 
@@ -259,14 +259,14 @@ class Claws {
 
     this.lower_claws.add(this.lower_claw_1, this.lower_claw_2, this.lower_claw_3, this.lower_claw_4);
 
-    this.claws.add(this.upper_claws, this.lower_claws, this.claw_base);
+    this.clawsModels.add(this.upper_claws, this.lower_claws, this.claw_base);
   }
 }
 
 class Crane {
   constructor() {
     this.clock = new THREE.Clock();
-    this.crane = new THREE.Group();
+    this.craneModels = new THREE.Group();
 
     this.rotateVelocity = 0;
     this.rotationSpeed = 10;
@@ -341,7 +341,8 @@ class Crane {
     // Then add the pivot to topCrane
     this.topCrane.add(topBackCrane);
     this.topCrane.add(this.cabine);
-    this.crane.add(base, this.tower, this.topCrane);
+    this.craneModels.add(base, this.tower, this.topCrane);
+
     document.addEventListener(
       "rotateCraneEvent",
       this.handleRotateCrane.bind(this)
@@ -391,7 +392,14 @@ class Crane {
 
 class Exterior {
   constructor() {
-    
+    this.exteriorModels = new THREE.Group();
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.green,
+      wireframe: true
+    });
+    this.container = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), material);
+    this.container.position.set(0, 0, 25);
+    this.exteriorModels.add(this.container);
   }
 }
 
@@ -458,7 +466,7 @@ class Cameras {
     movableCamera.position.set(150, 150, 150);
     movableCamera.lookAt(0, 0, 0);
 
-    this.cameras = [
+    this.camerasList = [
       frontalCamera,
       lateralCamera,
       topCamera,
@@ -477,12 +485,12 @@ class Cameras {
   handleSwitchCamera(event) {
     if (
       !event.detail.isPressed ||
-      event.detail.camera - 1 === this.cameras.indexOf(this.currentCamera)
+      event.detail.camera - 1 === this.camerasList.indexOf(this.currentCamera)
     ) {
       return;
     }
 
-    this.currentCamera = this.cameras[event.detail.camera - 1];
+    this.currentCamera = this.camerasList[event.detail.camera - 1];
     console.log("Switched to camera: " + event.detail.camera);
   }
 }
@@ -503,8 +511,9 @@ class MainScene {
     this.scene.add(new THREE.AxesHelper(100000));
     this.animate = this.animate.bind(this);
 
-    this.scene.add(crane.crane);
-    this.scene.add(crane.claws.claws);
+    this.scene.add(crane.craneModels);
+    this.scene.add(crane.claws.clawsModels);
+    this.scene.add(new Exterior().exteriorModels);
     window.addEventListener("resize", this.resize.bind(this));
   }
   animate() {
@@ -519,7 +528,7 @@ class MainScene {
     const height = window.innerHeight;
     this.renderer.setSize(width, height);
 
-    this.cameras.cameras.forEach(camera => {
+    this.cameras.camerasList.forEach(camera => {
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
