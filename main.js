@@ -4,27 +4,18 @@ class Input {
   constructor() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
     document.addEventListener("keyup", this.handleKeyUp.bind(this));
+    this.dict = {};
   }
 
   handleKeyDown(event) {
     switch (event.code) {
       case "Digit1":
-        this.dispatchSwitchCameraEvent(0, true);
-        break;
       case "Digit2":
-        this.dispatchSwitchCameraEvent(1, true);
-        break;
       case "Digit3":
-        this.dispatchSwitchCameraEvent(2, true);
-        break;
       case "Digit4":
-        this.dispatchSwitchCameraEvent(3, true);
-        break;
       case "Digit5":
-        this.dispatchSwitchCameraEvent(4, true);
-        break;
       case "Digit6":
-        this.dispatchSwitchCameraEvent(5, true);
+        this.dispatchSwitchCameraEvent(parseInt(event.key), true);
         break;
       case "KeyQ":
         this.dispatchRotateCraneEvent(1, true);
@@ -47,27 +38,22 @@ class Input {
       default:
         break;
     }
+
+    const imgElement = document.getElementById(event.code);
+    if (imgElement) {
+      imgElement.src = `./${event.code}-KeyPressed.png`;
+    }
   }
 
   handleKeyUp(event) {
     switch (event.code) {
       case "Digit1":
-        this.dispatchSwitchCameraEvent(0, false);
-        break;
       case "Digit2":
-        this.dispatchSwitchCameraEvent(1, false);
-        break;
       case "Digit3":
-        this.dispatchSwitchCameraEvent(2, false);
-        break;
       case "Digit4":
-        this.dispatchSwitchCameraEvent(3, false);
-        break;
       case "Digit5":
-        this.dispatchSwitchCameraEvent(4, false);
-        break;
       case "Digit6":
-        this.dispatchSwitchCameraEvent(5, false);
+        this.dispatchSwitchCameraEvent(parseInt(event.key), false);
         break;
       case "KeyQ":
         this.dispatchRotateCraneEvent(1, false);
@@ -90,12 +76,18 @@ class Input {
       default:
         break;
     }
+
+    const imgElement = document.getElementById(event.code);
+    if (imgElement) {
+      imgElement.src = `./${event.code}-KeyNotPressed.png`;
+    }
   }
 
   dispatchSwitchCameraEvent(camera, isPressed) {
     const switchCameraEvent = new CustomEvent("switchCameraEvent", {
       detail: { camera: camera, isPressed: isPressed },
     });
+
     document.dispatchEvent(switchCameraEvent);
   }
 
@@ -121,85 +113,55 @@ class Input {
   }
 }
 
-class HUD {
+class Claws {
+  // TODO
   constructor() {
-    this.initializeCameraKeys();
-    this.initializeRotateKeys();
-    this.initializeMoveKeys();
-    this.initializeElevateKeys();
-    document.addEventListener(
-      "switchCameraEvent",
-      this.handleSwitchCamera.bind(this)
-    );
-    document.addEventListener(
-      "rotateCraneEvent",
-      this.handleRotateCrane.bind(this)
-    );
-    document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
-    document.addEventListener(
-      "elevateCraneEvent",
-      this.handleElevateCrane.bind(this)
-    );
-  }
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.red,
+    });
 
-  // TODO:
-  initializeCameraKeys() {
-    let numberOfCameras = 6;
-    let currentPos = 0;
-    this.cameraSprites = [];
-  }
+    this.claws = new THREE.Group();
 
-  // TODO:
-  initializeRotateKeys() {}
+    this.claw1 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
+    this.claw1.position.set(4, 0, 4);
 
-  // TODO:
-  initializeMoveKeys() {}
+    this.claw2 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
+    this.claw2.position.set(-4, 0, -4);
 
-  // TODO:
-  initializeElevateKeys() {}
+    this.claw3 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
+    this.claw3.position.set(-4, 0, 4);
 
-  // TODO:
-  handleSwitchCamera(event) {
-    if (event.detail.isPressed) {
-    } else {
-    }
-  }
+    this.claw4 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
+    this.claw4.position.set(4, 0, -4);
 
-  // TODO:
-  handleRotateCrane(event) {
-    if (event.detail.isPressed) {
-    } else {
-    }
-  }
-
-  // TODO:
-  handleMoveCart(event) {
-    // TODO
-    if (event.detail.isPressed) {
-    } else {
-    }
-  }
-
-  // TODO:
-  handleElevateCrane(event) {
-    // TODO
-    if (event.detail.isPressed) {
-    } else {
-    }
+    this.claws.add(this.claw1, this.claw2, this.claw3, this.claw4);
   }
 }
 
 class Crane {
-  // TODO
   constructor() {
     this.clock = new THREE.Clock();
     this.crane = new THREE.Group();
+
+    this.rotateCranePositive = false;
+    this.rotateCraneNegative = false;
+    this.rotationSpeed = 10;
+
+    this.moveCartPositive = false;
+    this.moveCartNegative = false;
+    this.moveSpeed = 1;
+
+    this.elevateCranePositive = false;
+    this.elevateCraneNegative = false;
+    this.elevateSpeed = 1;
+
+    this.claws = new Claws();
 
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
     });
 
-    let base = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 20), material);
+    let base = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 20), material);
     base.position.set(22.5, -5, 0);
 
     this.tower = new THREE.Mesh(
@@ -211,11 +173,15 @@ class Crane {
     this.topCrane = new THREE.Group();
     let topBackCrane = new THREE.Group();
 
+    this.topCrane.position.set(22.5, 0, 0);
+
     let counterWeight = new THREE.Mesh(
       new THREE.BoxGeometry(10, 15, 5),
       material
     );
-    counterWeight.position.set(5, 93, 0);
+    counterWeight.position.set(5, 95, 0);
+
+    topBackCrane.add(counterWeight);
 
     let counterJib = new THREE.Mesh(
       new THREE.CylinderGeometry(5, 5, 50, 3),
@@ -227,6 +193,7 @@ class Crane {
 
     topBackCrane.add(counterJib);
 
+    // Then add the pivot to topCrane
     this.topCrane.add(topBackCrane);
     this.crane.add(base, this.tower, this.topCrane);
 
@@ -234,18 +201,69 @@ class Crane {
       "rotateCraneEvent",
       this.handleRotateCrane.bind(this)
     );
+    document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
+    document.addEventListener(
+      "elevateCraneEvent",
+      this.handleElevateCrane.bind(this)
+    );
   }
 
   handleRotateCrane(event) {
-    if (!event.detail.isPressed) {
-      return;
+    if (event.detail.direction === 1) {
+      this.rotateCranePositive = event.detail.isPressed;
+    } else if (event.detail.direction === -1) {
+      this.rotateCraneNegative = event.detail.isPressed;
+    }
+  }
+
+  handleMoveCart(event) {
+    if (event.detail.direction === 1) {
+      this.moveCartPositive = event.detail.isPressed;
+    } else if (event.detail.direction === -1) {
+      this.moveCartNegative = event.detail.isPressed;
+    }
+  }
+
+  handleElevateCrane(event) {
+    if (event.detail.direction === 1) {
+      this.elevateCranePositive = event.detail.isPressed;
+    } else if (event.detail.direction === -1) {
+      this.elevateCraneNegative = event.detail.isPressed;
+    }
+  }
+
+  rotateCrane(direction, deltaTime) {
+    // Rotate the pivot, which will rotate topCrane around its edge
+    this.topCrane.children[0].rotateOnAxis(
+      new THREE.Vector3(0, 1, 0),
+      direction * deltaTime * this.rotationSpeed
+    );
+  }
+
+  moveCart(direction, deltaTime) {}
+
+  elevateCrane(direction, deltaTime) {}
+
+  update() {
+    let deltaTime = this.clock.getDelta();
+
+    if (this.rotateCranePositive && !this.rotateCraneNegative) {
+      this.rotateCrane(1, deltaTime);
+    } else if (this.rotateCraneNegative && !this.rotateCranePositive) {
+      this.rotateCrane(-1, deltaTime);
     }
 
-    console.log("Rotating crane...");
-    this.topCrane.rotateOnAxis(
-      new THREE.Vector3(0, 1, 0),
-      1 * event.detail.direction * this.clock.getDelta()
-    );
+    if (this.moveCartPositive && !this.moveCartNegative) {
+      this.moveCart(1, deltaTime);
+    } else if (this.moveCartNegative && !this.moveCartPositive) {
+      this.moveCart(-1, deltaTime);
+    }
+
+    if (this.elevateCranePositive && !this.elevateCraneNegative) {
+      this.elevateCrane(1, deltaTime);
+    } else if (this.elevateCraneNegative && !this.elevateCranePositive) {
+      this.elevateCrane(-1, deltaTime);
+    }
   }
 }
 
@@ -327,13 +345,13 @@ class Cameras {
   handleSwitchCamera(event) {
     if (
       !event.detail.isPressed ||
-      event.detail.camera === this.cameras.indexOf(this.currentCamera)
+      event.detail.camera - 1 === this.cameras.indexOf(this.currentCamera)
     ) {
       return;
     }
 
-    this.currentCamera = this.cameras[event.detail.camera];
-    console.log("Switched to camera: " + (event.detail.camera + 1));
+    this.currentCamera = this.cameras[event.detail.camera - 1];
+    console.log("Switched to camera: " + event.detail.camera);
   }
 }
 
@@ -354,18 +372,20 @@ class MainScene {
     this.animate = this.animate.bind(this);
 
     this.scene.add(crane.crane);
+    this.scene.add(crane.claws.claws);
   }
 
   animate() {
     requestAnimationFrame(this.animate);
+    crane.update();
     this.renderer.render(this.scene, this.cameras.currentCamera);
   }
 }
 
 // TODO: macros for crane sizes and positions
+// TODO: fix deltaTime
 
 new Input();
-new HUD();
 let crane = new Crane();
 let cameras = new Cameras(crane);
 let mainScene = new MainScene(crane, cameras);
