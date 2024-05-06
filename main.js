@@ -5,6 +5,15 @@ class Input {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
     document.addEventListener("keyup", this.handleKeyUp.bind(this));
     this.dict = {};
+
+    this.rotateCranePositive = false;
+    this.rotateCraneNegative = false;
+
+    this.moveCartPositive = false;
+    this.moveCartNegative = false;
+
+    this.elevateCranePositive = false;
+    this.elevateCraneNegative = false;
   }
 
   handleKeyDown(event) {
@@ -92,23 +101,78 @@ class Input {
   }
 
   dispatchRotateCraneEvent(direction, isPressed) {
+    if (direction === 1) {
+      this.rotateCranePositive = isPressed;
+    } else if (direction === -1) {
+      this.rotateCraneNegative = isPressed;
+    }
+
+    if (
+      (this.rotateCranePositive && this.rotateCraneNegative) ||
+      (!this.rotateCranePositive && !this.rotateCraneNegative)
+    ) {
+      direction = 0;
+    } else if (this.rotateCranePositive) {
+      direction = 1;
+    } else if (this.rotateCraneNegative) { 
+      direction = -1;
+    }
+
     const rotateCraneEvent = new CustomEvent("rotateCraneEvent", {
-      detail: { direction: direction, isPressed: isPressed },
+      detail: { direction: direction },
     });
+
+    console.log("Rotate Crane: " + direction);
     document.dispatchEvent(rotateCraneEvent);
   }
 
   dispatchMoveCartEvent(direction, isPressed) {
+    if (direction === 1) {
+      this.moveCartPositive = isPressed;
+    } else if (direction === -1) {
+      this.moveCartNegative = isPressed;
+    }
+
+    if (
+      (this.moveCartPositive && this.moveCartNegative) ||
+      (!this.moveCartPositive && !this.moveCartNegative)
+    ) {
+      direction = 0;
+    } else if (this.moveCartPositive) {
+      direction = 1;
+    } else if (this.moveCartNegative) { 
+      direction = -1;
+    }
+
     const moveCartEvent = new CustomEvent("moveCartEvent", {
-      detail: { direction: direction, isPressed: isPressed },
+      detail: { direction: direction },
     });
+    console.log("Move Cart: " + direction);
     document.dispatchEvent(moveCartEvent);
   }
 
   dispatchElevateCraneEvent(direction, isPressed) {
+    if (direction === 1) {
+      this.elevateCranePositive = isPressed;
+    } else if (direction === -1) {
+      this.elevateCraneNegative = isPressed;
+    }
+
+    if (
+      (this.elevateCranePositive && this.elevateCraneNegative) ||
+      (!this.elevateCranePositive && !this.elevateCraneNegative)
+    ) {
+      direction = 0;
+    } else if (this.elevateCranePositive) {
+      direction = 1;
+    } else if (this.elevateCraneNegative) { 
+      direction = -1;
+    }
+
     const elevateCranteEvent = new CustomEvent("elevateCraneEvent", {
-      detail: { direction: direction, isPressed: isPressed },
+      detail: { direction: direction },
     });
+    console.log("Elevate Crane: " + direction);
     document.dispatchEvent(elevateCranteEvent);
   }
 }
@@ -120,21 +184,71 @@ class Claws {
       color: THREE.Color.NAMES.red,
     });
 
+    this.upper_claws = new THREE.Group();
+    this.lower_claws = new THREE.Group();
     this.claws = new THREE.Group();
 
-    this.claw1 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
-    this.claw1.position.set(4, 0, 4);
+    this.upper_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.upper_claw_1.position.set(4, -2, 4);
+    this.upper_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.claw2 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
-    this.claw2.position.set(-4, 0, -4);
+    this.upper_claw_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.upper_claw_2.position.set(-4, -2, -4);
+    this.upper_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.claw3 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
-    this.claw3.position.set(-4, 0, 4);
+    this.upper_claw_3 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.upper_claw_3.position.set(-4, -2, 4);
+    this.upper_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.claw4 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 10), material);
-    this.claw4.position.set(4, 0, -4);
+    this.upper_claw_4 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.upper_claw_4.position.set(4, -2, -4);
+    this.upper_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.claws.add(this.claw1, this.claw2, this.claw3, this.claw4);
+    this.upper_claws.add(this.upper_claw_1, this.upper_claw_2, this.upper_claw_3, this.upper_claw_4);
+
+    this.lower_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.lower_claw_1.position.set(4, -12, 4);
+    this.lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 8); // Rotate 45 degrees around X axis
+    
+    this.lower_claw_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.lower_claw_2.position.set(-4, -12, -4);
+    this.lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
+
+    this.lower_claw_3 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.lower_claw_3.position.set(-4, -12, 4);
+    this.lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
+
+    this.lower_claw_4 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    this.lower_claw_4.position.set(4, -12, -4);
+    this.lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), -Math.PI / 8); // Rotate 45 degrees around X axis
+
+    this.lower_claws.add(this.lower_claw_1, this.lower_claw_2, this.lower_claw_3, this.lower_claw_4);
+
+    this.claws.add(this.upper_claws, this.lower_claws);
   }
 }
 
@@ -143,8 +257,7 @@ class Crane {
     this.clock = new THREE.Clock();
     this.crane = new THREE.Group();
 
-    this.rotateCranePositive = false;
-    this.rotateCraneNegative = false;
+    this.rotateVelocity = 0;
     this.rotationSpeed = 10;
 
     this.moveCartPositive = false;
@@ -173,23 +286,16 @@ class Crane {
     this.topCrane = new THREE.Group();
     let topBackCrane = new THREE.Group();
 
-    this.topCrane.position.set(22.5, 0, 0);
-
     let counterWeight = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 15, 5),
+      new THREE.BoxGeometry(10, 10, 5),
       material
     );
-    counterWeight.position.set(5, 95, 0);
+    counterWeight.position.set(0, 85, 0);
 
     topBackCrane.add(counterWeight);
 
-    let counterJib = new THREE.Mesh(
-      new THREE.CylinderGeometry(5, 5, 50, 3),
-      material
-    );
-    counterJib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
-    counterJib.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-    counterJib.position.set(15, 90, 0);
+    let counterJib = new THREE.Mesh(new THREE.BoxGeometry(35, 5, 5), material);
+    counterJib.position.set(10, 92.5, 0);
 
     topBackCrane.add(counterJib);
 
@@ -209,11 +315,7 @@ class Crane {
   }
 
   handleRotateCrane(event) {
-    if (event.detail.direction === 1) {
-      this.rotateCranePositive = event.detail.isPressed;
-    } else if (event.detail.direction === -1) {
-      this.rotateCraneNegative = event.detail.isPressed;
-    }
+    this.rotateVelocity = event.detail.direction;
   }
 
   handleMoveCart(event) {
@@ -247,22 +349,8 @@ class Crane {
   update() {
     let deltaTime = this.clock.getDelta();
 
-    if (this.rotateCranePositive && !this.rotateCraneNegative) {
-      this.rotateCrane(1, deltaTime);
-    } else if (this.rotateCraneNegative && !this.rotateCranePositive) {
-      this.rotateCrane(-1, deltaTime);
-    }
-
-    if (this.moveCartPositive && !this.moveCartNegative) {
-      this.moveCart(1, deltaTime);
-    } else if (this.moveCartNegative && !this.moveCartPositive) {
-      this.moveCart(-1, deltaTime);
-    }
-
-    if (this.elevateCranePositive && !this.elevateCraneNegative) {
-      this.elevateCrane(1, deltaTime);
-    } else if (this.elevateCraneNegative && !this.elevateCranePositive) {
-      this.elevateCrane(-1, deltaTime);
+    if (this.rotateVelocity !== 0) {
+      this.rotateCrane(this.rotateVelocity, deltaTime);
     }
   }
 }
