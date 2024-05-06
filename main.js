@@ -1,5 +1,6 @@
 import * as THREE from "three";
 'use strict';
+
 class Input {
   constructor() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
@@ -518,10 +519,22 @@ class MainScene {
     const height = window.innerHeight;
     this.renderer.setSize(width, height);
 
-    // This does not work with Orthographic cameras
     this.cameras.cameras.forEach(camera => {
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+      else {
+        const aspect = width / height;
+        const frustumHeight = camera.top - camera.bottom;
+        
+        const newWidth = aspect * frustumHeight;
+        const newHeight = frustumHeight;
+        
+        camera.left = -newWidth / 2;
+        camera.right = newWidth / 2;
+        camera.top = newHeight / 2;
+        camera.bottom = -newHeight / 2;
         camera.updateProjectionMatrix();
       }
     });
