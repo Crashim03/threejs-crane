@@ -290,10 +290,11 @@ class Crane {
       new THREE.CylinderGeometry(5, 5, 90, 3),
       material
     );
-    this.tower.position.set(22.5, 45, -1.15);
+    this.tower.position.set(23.5, 45, 0);
+    this.tower.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
 
-    this.cabine = new THREE.Mesh(new THREE.BoxGeometry(7.5, 5, 7.5), material);
-    this.cabine.position.set(25, 85, 0);
+    this.cabine = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), material);
+    this.cabine.position.set(30, 87.5, 0);
 
     this.topCrane = new THREE.Group();
     let topBackCrane = new THREE.Group();
@@ -307,7 +308,7 @@ class Crane {
     topBackCrane.add(counterWeight);
 
     let counterJib = new THREE.Mesh(new THREE.BoxGeometry(35, 5, 5), material);
-    counterJib.position.set(10, 92.5, 0);
+    counterJib.position.set(8.150, 92.5, 0);
 
     topBackCrane.add(counterJib);
 
@@ -315,7 +316,8 @@ class Crane {
       new THREE.CylinderGeometry(0, 5, 12, 3),
       material
     );
-    this.spear_holder.position.set(22.5, 101, 0);
+    this.spear_holder.position.set(23.5, 101, 0);
+    this.spear_holder.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
 
     topBackCrane.add(this.spear_holder);
 
@@ -328,19 +330,17 @@ class Crane {
     
     topBackCrane.add(this.stay_rod);
 
-    let Jib = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 90, 3), material);
-    Jib.rotation.z = Math.PI / 2;
-
-    Jib.position.set(67.5, 92.5, 0);
+    let Jib = new THREE.Mesh(new THREE.CylinderGeometry(3.33, 3.33, 90, 3), material);
+    Jib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    Jib.rotateOnAxis(new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
+    Jib.position.set(70.777777, 92.5, 0);
 
     topBackCrane.add(Jib);
-
     
     // Then add the pivot to topCrane
     this.topCrane.add(topBackCrane);
     this.topCrane.add(this.cabine);
     this.crane.add(base, this.tower, this.topCrane);
-
     document.addEventListener(
       "rotateCraneEvent",
       this.handleRotateCrane.bind(this)
@@ -388,6 +388,12 @@ class Crane {
   }
 }
 
+class Exterior {
+  constructor() {
+    
+  }
+}
+
 class Cameras {
   constructor(crane) {
     let SCREEN_WIDTH = window.innerWidth;
@@ -429,7 +435,7 @@ class Cameras {
       1,
       1000
     );
-    topCamera.position.y = 50;
+    topCamera.position.y = 100;
     topCamera.lookAt(0, 0, 0);
 
     const fixedOrtCamera = new THREE.OrthographicCamera(
@@ -512,6 +518,7 @@ class MainScene {
     const height = window.innerHeight;
     this.renderer.setSize(width, height);
 
+    // This does not work with Orthographic cameras
     this.cameras.cameras.forEach(camera => {
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height;
