@@ -1,5 +1,7 @@
 import * as THREE from "three";
-'use strict';
+// 'use strict';
+
+let wireframe_value = true;
 
 class Input {
   constructor() {
@@ -177,225 +179,386 @@ class Input {
   }
 }
 
-class Claws {
-  // TODO
-  constructor() {
-    const material = new THREE.MeshBasicMaterial({
-      color: THREE.Color.NAMES.green,
-      wireframe: true
-    });
+class Cameras {
+  constructor(crane) {
+    let SCREEN_WIDTH = window.innerWidth;
+    let SCREEN_HEIGHT = window.innerHeight;
     
-    this.upper_claws = new THREE.Group();
-    this.lower_claws = new THREE.Group();
-    this.clawsModels = new THREE.Group();
-
-    let height = 4;
-
-    this.claw_base = new THREE.Mesh(
-      new THREE.CylinderGeometry(6, 6, height),
-      material
-    );
-    this.claw_base.position.set(0, height, 0);
-
-    this.upper_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    this.upper_claw_1.position.set(5, -2, 5);
-    this.upper_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 8); // Rotate 45 degrees around X axis
-
-    this.upper_claw_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    this.upper_claw_2.position.set(-5, -2, -5);
-    this.upper_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    this.upper_claw_3 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    this.upper_claw_3.position.set(-5, -2, 5);
-    this.upper_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    this.upper_claw_4 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    this.upper_claw_4.position.set(5, -2, -5);
-    this.upper_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    this.upper_claws.add(this.upper_claw_1, this.upper_claw_2, this.upper_claw_3, this.upper_claw_4);
+    const aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+    const frustumSize = 200;
     
-    //------------------------------------------------------------------------------------------------------------
-
-    this.lower_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
+    const frontalCamera = new THREE.OrthographicCamera(
+      (-frustumSize * aspect) / 2,
+      (frustumSize * aspect) / 2,
+      frustumSize / 2,
+      frustumSize / -2,
+      1,
+      1000
     );
-    this.lower_claw_1.position.set(5, -8, 5);
-    this.lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 4); // Rotate 45 degrees around X axis
+    frontalCamera.position.z = 500;
+    frontalCamera.lookAt(0, 0, 0);
+    frontalCamera.position.y = 50;
     
-    this.lower_claw_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
+    const lateralCamera = new THREE.OrthographicCamera(
+      (-frustumSize * aspect) / 2,
+      (frustumSize * aspect) / 2,
+      frustumSize / 2,
+      frustumSize / -2,
+      1,
+      1000
     );
-    this.lower_claw_2.position.set(-5, -8, -5);
-    this.lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    this.lower_claw_3 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
+    lateralCamera.position.x = 50;
+    
+    lateralCamera.lookAt(0, 0, 0);
+    lateralCamera.position.y = 50;
+    
+    const topCamera = new THREE.OrthographicCamera(
+      (-frustumSize * aspect) / 2,
+      (frustumSize * aspect) / 2,
+      frustumSize / 2,
+      frustumSize / -2,
+      1,
+      1000
     );
-    this.lower_claw_3.position.set(-5, -8, 5);
-    this.lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    this.lower_claw_4 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
+    topCamera.position.y = 100;
+    topCamera.lookAt(0, 0, 0);
+    
+    const fixedOrtCamera = new THREE.OrthographicCamera(
+      (-frustumSize * aspect) / 2,
+      (frustumSize * aspect) / 2,
+      frustumSize / 2,
+      frustumSize / -2,
+      1,
+      1000
     );
-    this.lower_claw_4.position.set(5, -8, -5);
-    this.lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    this.lower_claws.add(this.lower_claw_1, this.lower_claw_2, this.lower_claw_3, this.lower_claw_4);
-
-    this.clawsModels.add(this.upper_claws, this.lower_claws, this.claw_base);
+    fixedOrtCamera.position.set(150, 150, 150);
+    fixedOrtCamera.lookAt(0, 0, 0);
+    
+    const fixedPersCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+    fixedPersCamera.position.set(150, 150, 150);
+    fixedPersCamera.lookAt(0, 0, 0);
+    
+    const movableCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+    movableCamera.position.set(150, 150, 150);
+    movableCamera.lookAt(0, 0, 0);
+    
+    this.camerasList = [
+      frontalCamera,
+      lateralCamera,
+      topCamera,
+      fixedOrtCamera,
+      fixedPersCamera,
+      movableCamera,
+    ];
+    this.currentCamera = frontalCamera;
+    document.addEventListener(
+      "switchCameraEvent",
+      this.handleSwitchCamera.bind(this)
+    );
+    
+  }
+  
+  handleSwitchCamera(event) {
+    if (
+      !event.detail.isPressed ||
+      event.detail.camera - 1 === this.camerasList.indexOf(this.currentCamera)
+    ) {
+      return;
+    }
+    
+    this.currentCamera = this.camerasList[event.detail.camera - 1];
+    console.log("Switched to camera: " + event.detail.camera);
   }
 }
 
-class Crane {
+class UpperClaws {
   constructor() {
-    this.clock = new THREE.Clock();
-    this.craneModels = new THREE.Group();
+    this.upperClaws = new THREE.Group();
 
-    this.rotateVelocity = 0;
-    this.rotationSpeed = 10;
+    let upper_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upper_claw_1.position.set(5, -2, 5);
+    upper_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.moveCartVelocity = 0;
-    this.moveCartSpeed = 10;
+    let upper_claw_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upper_claw_2.position.set(-5, -2, -5);
+    upper_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.elevateVelocity = 0;
-    this.elevateSpeed = 10;
+    let upper_claw_3 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upper_claw_3.position.set(-5, -2, 5);
+    upper_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
-    this.claws = new Claws();
+    let upper_claw_4 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upper_claw_4.position.set(5, -2, -5);
+    upper_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), -Math.PI / 8); // Rotate 45 degrees around X axis
 
+    this.upperClaws.add(upper_claw_1, upper_claw_2, upper_claw_3, upper_claw_4);
+  }
+}
+
+class BottomClaws {
+  constructor() {
+
+    this.bottomClaws = new THREE.Group();
+
+    let lower_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_1.position.set(5, -8, 5);
+    lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 4); // Rotate 45 degrees around X axis
+    
+    let lower_claw_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_2.position.set(-5, -8, -5);
+    lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
+
+    let lower_claw_3 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_3.position.set(-5, -8, 5);
+    lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
+
+    let lower_claw_4 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_4.position.set(5, -8, -5);
+    lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), Math.PI / 4); // Rotate 45 degrees around X axis
+    
+    this.bottomClaws.add(lower_claw_1, lower_claw_2, lower_claw_3, lower_claw_4);
+  }
+}
+
+class Claws {
+  constructor() {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
       wireframe: true
     });
+    
+    this.clawsGroup = new THREE.Group();
 
-    let base = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 20), material);
-    base.position.set(22.5, -5, 0);
+    this.clawsDirection = 0;
+    this.clawsSpeed = 10;
 
+    this.clock = new THREE.Clock();
+    
+    let upper_claws = new UpperClaws(material).upperClaws;
+    let lower_claws = new THREE.Group();
+
+    let height = 4;
+
+    let claw_base = new THREE.Mesh(
+      new THREE.CylinderGeometry(6, 6, height),
+      material
+    );
+    claw_base.position.set(0, height, 0);
+
+    
+    //------------------------------------------------------------------------------------------------------------
+
+    let lower_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_1.position.set(5, -8, 5);
+    lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 4); // Rotate 45 degrees around X axis
+    
+    let lower_claw_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_2.position.set(-5, -8, -5);
+    lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
+
+    let lower_claw_3 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_3.position.set(-5, -8, 5);
+    lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
+
+    let lower_claw_4 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 5),
+      material
+    );
+    lower_claw_4.position.set(5, -8, -5);
+    lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), Math.PI / 4); // Rotate 45 degrees around X axis
+
+    lower_claws.add(lower_claw_1, lower_claw_2, lower_claw_3, lower_claw_4);
+
+    this.clawsGroup.add(upper_claws, lower_claws, claw_base);
+  }
+  
+  handleElevateCrane(event) {
+    this.clawsDirection = event.detail.direction;
+  }
+
+  update() {
+    let deltaTime = this.clock.getDelta();
+
+    if (this.clawsDirection === 0) {
+      return;
+    }
+
+    let newPosition = this.clawsGroup.position.y + this.clawsDirection * deltaTime * this.clawsSpeed;
+    this.clawsGroup.position.set(this.clawsGroup.position.x, newPosition, this.clawsGroup.position.z);
+  }
+}
+
+class Jib {
+  constructor(material) {
+    this.jib = new THREE.Mesh(new THREE.CylinderGeometry(3.33, 3.33, 90, 3), material);
+    this.jib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    this.jib.rotateOnAxis(new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
+    this.jib.position.set(70.1, 93.33, 0);
+  }
+}
+
+class CounterJib {
+  constructor(material) {
+    this.backJib = new THREE.Mesh(new THREE.BoxGeometry(35, 5, 5), material);
+    this.backJib.position.set(8.650, 92.5, 0);
+
+    this.counterWeight = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 15, 5),
+      material
+    );
+    this.counterWeight.position.set(0, 87.5, 0);
+
+    this.counterJib = new THREE.Group();
+    this.counterJib.add(this.backJib, this.counterWeight);
+  }
+}
+
+class TowerPeak {
+  constructor(material) {
+    this.towerPeak = new THREE.Mesh(
+      new THREE.CylinderGeometry(0, 5, 12, 3),
+      material
+    );
+    this.towerPeak.position.set(23.5, 101, 0);
+    this.towerPeak.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
+  }
+}
+
+class BackLine {
+  constructor(material) {
+    this.backLine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 30, 64),
+      material
+    );
+    this.backLine.rotateOnAxis(new THREE.Vector3(0, 0, -11), Math.PI / 32);
+    this.backLine.position.set(7.4, 101, 0);
+  }
+}
+
+class MainLine {
+  constructor(material) {
+    this.mainLine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 93.275, 64),
+      material
+    );
+    this.mainLine.rotateOnAxis(new THREE.Vector3(0, 0, -1), -82.608 * Math.PI / 180);
+    this.mainLine.position.set(70, 101, 0);
+  }
+}
+
+class Cabine {
+  constructor(material) {
+    this.cabine = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), material);
+    this.cabine.position.set(30, 87.5, 0);
+  }
+}
+
+class TopCrane {
+  constructor() {
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.yellow,
+      wireframe: wireframe_value
+    });
+
+    this.clock = new THREE.Clock();
+    this.rotateDirection = 0;
+    this.rotationSpeed = 10;
+
+    this.topCraneGroup = new THREE.Group();
+
+    this.topCraneGroup.position.set(22.5, 0, 0);
+
+    let cabine = new Cabine(material).cabine;
+    cabine.position.x -= 15;
+    let counterJib = new CounterJib(material).counterJib;
+    counterJib.position.x -= 22.5;
+    let jib = new Jib(material).jib;
+    jib.position.x -= 22.5;
+    let towerPeak = new TowerPeak(material).towerPeak;
+    towerPeak.position.x -= 22.5;
+    let backLine = new BackLine(material).backLine;
+    backLine.position.x -= 22.5;
+    let mainLine = new MainLine(material).mainLine;
+    mainLine.position.x -= 22.5;
+    this.cart = new Cart();
+    
+    this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, this.cart.cartModel);
+
+    document.addEventListener(
+      "rotateCraneEvent",
+      this.handleRotateCrane.bind(this)
+    );
+  }
+
+  handleRotateCrane(event) {
+    this.rotateDirection = event.detail.direction;
+  }
+
+  rotateCrane(deltaTime) {
+    this.topCraneGroup.rotateOnAxis(
+      new THREE.Vector3(0, 1, 0),
+      this.rotateDirection * deltaTime * this.rotationSpeed
+    );
+  }
+
+  update() {
+    this.cart.update()
+
+    let deltaTime = this.clock.getDelta();
+    if (this.rotateDirection !== 0) {
+      this.rotateCrane(deltaTime);
+    }
+  }
+}
+
+class Base {
+  constructor(material) {
+    this.base = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 20), material);
+    this.base.position.set(22.5, -5, 0);
+  }
+}
+
+class Tower {
+  constructor(material) {
     this.tower = new THREE.Mesh(
       new THREE.CylinderGeometry(5, 5, 90, 3),
       material
     );
     this.tower.position.set(23.5, 45, 0);
     this.tower.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
-
-    this.cabine = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), material);
-    this.cabine.position.set(30, 87.5, 0);
-
-    this.topCrane = new THREE.Group();
-    let topBackCrane = new THREE.Group();
-
-    let counterWeight = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 15, 5),
-      material
-    );
-    counterWeight.position.set(0, 87.5, 0);
-
-    topBackCrane.add(counterWeight);
-
-    let counterJib = new THREE.Mesh(new THREE.BoxGeometry(35, 5, 5), material);
-    counterJib.position.set(8.650, 92.5, 0);
-
-    topBackCrane.add(counterJib);
-
-    this.spear_holder = new THREE.Mesh(
-      new THREE.CylinderGeometry(0, 5, 12, 3),
-      material
-    );
-    this.spear_holder.position.set(23.5, 101, 0);
-    this.spear_holder.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
-
-    topBackCrane.add(this.spear_holder);
-
-    this.stay_rod_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.1, 30, 64),
-      material
-    );
-    this.stay_rod_1.rotateOnAxis(new THREE.Vector3(0, 0, -11), Math.PI / 32);
-    this.stay_rod_1.position.set(7.4, 101, 0);
-    
-    topBackCrane.add(this.stay_rod_1);
-
-    this.stay_rod_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.1, 93.275, 64),
-      material
-    );
-    this.stay_rod_2.rotateOnAxis(new THREE.Vector3(0, 0, -1), -82.608 * Math.PI / 180);
-    this.stay_rod_2.position.set(70, 101, 0);
-    
-    topBackCrane.add(this.stay_rod_2);
-
-    let Jib = new THREE.Mesh(new THREE.CylinderGeometry(3.33, 3.33, 90, 3), material);
-    Jib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
-    Jib.rotateOnAxis(new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
-    Jib.position.set(71.1, 93.33, 0);
-
-    topBackCrane.add(Jib);
-    
-    // Then add the pivot to topCrane
-    this.topCrane.add(topBackCrane);
-    this.topCrane.add(this.cabine);
-    this.craneModels.add(base, this.tower, this.topCrane);
-
-    document.addEventListener(
-      "rotateCraneEvent",
-      this.handleRotateCrane.bind(this)
-    );
-    document.addEventListener(
-      "moveCartEvent",
-      this.handleMoveCart.bind(this)
-    );
-    document.addEventListener(
-      "elevateCraneEvent",
-      this.handleElevateCrane.bind(this)
-    );
-  }
-
-  handleRotateCrane(event) {
-    this.rotateVelocity = event.detail.direction;
-  }
-
-  handleMoveCart(event) {
-    this.moveCartVelocity = event.detail.direction;
-  }
-
-  handleElevateCrane(event) {
-    this.elevateCrane = event.detail.direction;
-  }
-
-  rotateCrane(direction, deltaTime) {
-    // Rotate the pivot, which will rotate topCrane around its edge
-    this.topCrane.children[0].rotateOnAxis(
-      new THREE.Vector3(0, 1, 0),
-      direction * deltaTime * this.rotationSpeed
-    );
-  }
-
-  moveCart(direction, deltaTime) {}
-
-  elevateCrane(direction, deltaTime) {}
-
-  update() {
-    let deltaTime = this.clock.getDelta();
-
-    if (this.rotateVelocity !== 0) {
-      this.rotateCrane(this.rotateVelocity, deltaTime);
-    }
   }
 }
 
@@ -412,95 +575,64 @@ class Exterior {
   }
 }
 
-class Cameras {
-  constructor(crane) {
-    let SCREEN_WIDTH = window.innerWidth;
-    let SCREEN_HEIGHT = window.innerHeight;
-
-    const aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-    const frustumSize = 200;
-
-    const frontalCamera = new THREE.OrthographicCamera(
-      (-frustumSize * aspect) / 2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
-      1,
-      1000
-    );
-    frontalCamera.position.z = 500;
-    frontalCamera.lookAt(0, 0, 0);
-    frontalCamera.position.y = 50;
-
-    const lateralCamera = new THREE.OrthographicCamera(
-      (-frustumSize * aspect) / 2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
-      1,
-      1000
-    );
-    lateralCamera.position.x = 50;
-
-    lateralCamera.lookAt(0, 0, 0);
-    lateralCamera.position.y = 50;
-
-    const topCamera = new THREE.OrthographicCamera(
-      (-frustumSize * aspect) / 2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
-      1,
-      1000
-    );
-    topCamera.position.y = 100;
-    topCamera.lookAt(0, 0, 0);
-
-    const fixedOrtCamera = new THREE.OrthographicCamera(
-      (-frustumSize * aspect) / 2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
-      1,
-      1000
-    );
-    fixedOrtCamera.position.set(150, 150, 150);
-    fixedOrtCamera.lookAt(0, 0, 0);
-
-    const fixedPersCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    fixedPersCamera.position.set(150, 150, 150);
-    fixedPersCamera.lookAt(0, 0, 0);
-
-    const movableCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    movableCamera.position.set(150, 150, 150);
-    movableCamera.lookAt(0, 0, 0);
-
-    this.camerasList = [
-      frontalCamera,
-      lateralCamera,
-      topCamera,
-      fixedOrtCamera,
-      fixedPersCamera,
-      movableCamera,
-    ];
-    this.currentCamera = frontalCamera;
-    document.addEventListener(
-      "switchCameraEvent",
-      this.handleSwitchCamera.bind(this)
-    );
-
+class Cart {
+  constructor() {
+    this.cartModel = new THREE.Group();
+    this.clock = new THREE.Clock();
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.green,
+      wireframe: true
+    });
+    this.cartModel.add(new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material));
+    
+    this.cartDirection = 0;
+    this.cartSpeed = 10;
+    this.cartMaxPosition = 10;
+    
+    document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
   }
 
-  handleSwitchCamera(event) {
-    if (
-      !event.detail.isPressed ||
-      event.detail.camera - 1 === this.camerasList.indexOf(this.currentCamera)
-    ) {
+  handleMoveCart(event) {
+    this.cartVelocity = event.detail.direction;
+    console.log(this.cartModel.rotation);
+  }
+
+  update() {
+    let deltaTime = this.clock.getDelta();
+    
+    if (this.cartDirection === 0) {
       return;
     }
+    
+    let nextPosition = this.cartModel.position.x + this.cartDirection * this.cartSpeed * deltaTime;
+    if (nextPosition > this.cartMaxPosition) {
+      nextPosition = this.cartMaxPosition;
+    } else if (nextPosition < 0) {
+      nextPosition = 0;
+    }
+    this.cartModel.position.set(nextPosition, this.cartModel.position.y, this.cartModel.position.z);
+  }
+}
+class Crane {
+  constructor() {
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.grey,
+      wireframe: wireframe_value
+    });
 
-    this.currentCamera = this.camerasList[event.detail.camera - 1];
-    console.log("Switched to camera: " + event.detail.camera);
+    this.craneGroup = new THREE.Group();
+
+    this.claws = new Claws();
+
+    let base = new Base(material).base;
+    let tower = new Tower(material).tower;
+    this.topCrane = new TopCrane();
+
+    this.craneGroup.add(base, tower, this.topCrane.topCraneGroup);
+  }
+
+  update() {
+    this.topCrane.update();
   }
 }
 
@@ -509,20 +641,18 @@ class MainScene {
     this.cameras = cameras;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("lightblue");
-
+    
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
-
+    
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     document.body.appendChild(this.renderer.domElement);
-
+    
     this.scene.add(new THREE.AxesHelper(100000));
     this.animate = this.animate.bind(this);
-
-    this.scene.add(crane.craneModels);
-    this.scene.add(crane.claws.clawsModels);
-    this.scene.add(new Exterior().exteriorModels);
+    
+    this.scene.add(crane.craneGroup);
     window.addEventListener("resize", this.resize.bind(this));
   }
   animate() {
@@ -530,13 +660,13 @@ class MainScene {
     crane.update();
     this.renderer.render(this.scene, this.cameras.currentCamera);
   }
-
+  
   resize() {
     console.log("Update window");
     const width = window.innerWidth;
     const height = window.innerHeight;
     this.renderer.setSize(width, height);
-
+    
     this.cameras.camerasList.forEach(camera => {
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height;
@@ -558,8 +688,6 @@ class MainScene {
     });
   }
 }
-
-// TODO: macros for crane sizes and positions
 
 new Input();
 let crane = new Crane();
