@@ -418,7 +418,7 @@ class Jib {
     this.jib = new THREE.Mesh(new THREE.CylinderGeometry(3.33, 3.33, 90, 3), material);
     this.jib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
     this.jib.rotateOnAxis(new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
-    this.jib.position.set(70.1, 93.33, 0);
+    this.jib.position.set(71.1, 93.33, 0);
   }
 }
 
@@ -471,6 +471,26 @@ class MainLine {
   }
 }
 
+class SupportLines {
+  constructor(material) {
+    this.supportLine_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 71, 64),
+      material
+    );
+    this.supportLine_1.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    this.supportLine_1.position.set(77, 89, 0);
+
+    this.supportLine_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 1, 64),
+      material
+    );
+    this.supportLine_2.position.set(112.5, 89.5, 0);
+
+    this.supportLines = new THREE.Group();
+    this.supportLines.add(this.supportLine_1, this.supportLine_2);
+  }
+}
+
 class Cabine {
   constructor(material) {
     this.cabine = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), material);
@@ -505,9 +525,11 @@ class TopCrane {
     backLine.position.x -= 22.5;
     let mainLine = new MainLine(material).mainLine;
     mainLine.position.x -= 22.5;
+    let supportLines = new SupportLines(material).supportLines;
+    supportLines.position.x -= 22.5;
     this.cart = new Cart(camera);
     
-    this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, this.cart.cartGroup);
+    this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, supportLines, this.cart.cartGroup);
 
     document.addEventListener(
       "rotateCraneEvent",
