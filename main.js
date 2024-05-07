@@ -21,6 +21,7 @@ class Input {
   handleKeyDown(event) {
     switch (event.code) {
       case "Digit1":
+        wireframe_value = !wireframe_value;
       case "Digit2":
       case "Digit3":
       case "Digit4":
@@ -41,10 +42,10 @@ class Input {
         this.dispatchMoveCartEvent(-1, true);
         break;
       case "KeyE":
-        this.dispatchElevateCraneEvent(1, true);
+        this.dispatchElevateClawsEvent(1, true);
         break;
       case "KeyD":
-        this.dispatchElevateCraneEvent(-1, true);
+        this.dispatchElevateClawsEvent(-1, true);
         break;
       default:
         break;
@@ -79,10 +80,10 @@ class Input {
         this.dispatchMoveCartEvent(-1, false);
         break;
       case "KeyE":
-        this.dispatchElevateCraneEvent(1, false);
+        this.dispatchElevateClawsEvent(1, false);
         break;
       case "KeyD":
-        this.dispatchElevateCraneEvent(-1, false);
+        this.dispatchElevateClawsEvent(-1, false);
         break;
       default:
         break;
@@ -109,8 +110,7 @@ class Input {
       this.rotateCraneNegative = isPressed;
     }
 
-    if (
-      (this.rotateCranePositive && this.rotateCraneNegative) ||
+    if ((this.rotateCranePositive && this.rotateCraneNegative) ||
       (!this.rotateCranePositive && !this.rotateCraneNegative)
     ) {
       direction = 0;
@@ -135,8 +135,7 @@ class Input {
       this.moveCartNegative = isPressed;
     }
 
-    if (
-      (this.moveCartPositive && this.moveCartNegative) ||
+    if ((this.moveCartPositive && this.moveCartNegative) ||
       (!this.moveCartPositive && !this.moveCartNegative)
     ) {
       direction = 0;
@@ -153,15 +152,14 @@ class Input {
     document.dispatchEvent(moveCartEvent);
   }
 
-  dispatchElevateCraneEvent(direction, isPressed) {
+  dispatchElevateClawsEvent(direction, isPressed) {
     if (direction === 1) {
       this.elevateCranePositive = isPressed;
     } else if (direction === -1) {
       this.elevateCraneNegative = isPressed;
     }
 
-    if (
-      (this.elevateCranePositive && this.elevateCraneNegative) ||
+    if ((this.elevateCranePositive && this.elevateCraneNegative) ||
       (!this.elevateCranePositive && !this.elevateCraneNegative)
     ) {
       direction = 0;
@@ -171,16 +169,16 @@ class Input {
       direction = -1;
     }
 
-    const elevateCranteEvent = new CustomEvent("elevateCraneEvent", {
+    const elevateCranteEvent = new CustomEvent("elevateClawsEvent", {
       detail: { direction: direction },
     });
-    console.log("Elevate Crane: " + direction);
+    console.log("Elevate Claws: " + direction);
     document.dispatchEvent(elevateCranteEvent);
   }
 }
 
 class Cameras {
-  constructor(crane) {
+  constructor() {
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
     
@@ -272,7 +270,7 @@ class Cameras {
 }
 
 class UpperClaws {
-  constructor() {
+  constructor(material) {
     this.upperClaws = new THREE.Group();
 
     let upper_claw_1 = new THREE.Mesh(
@@ -308,7 +306,7 @@ class UpperClaws {
 }
 
 class BottomClaws {
-  constructor() {
+  constructor(material) {
 
     this.bottomClaws = new THREE.Group();
 
@@ -345,21 +343,27 @@ class BottomClaws {
 }
 
 class Claws {
-  constructor() {
+  constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
       wireframe: true
     });
     
     this.clawsGroup = new THREE.Group();
-
+    
     this.clawsDirection = 0;
-    this.clawsSpeed = 10;
+    this.clawsSpeed = 50;
+    this.clawsMinPosition = -15;
+    this.clawsMaxPosition = -70;
+    
+    this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
+    this.rope.scale.set(1, this.clawsMinPosition, 1);
+    this.rope.position.set(this.rope.position.x, this.clawsMinPosition / 2.5 + 1, this.rope.position.z);
 
     this.clock = new THREE.Clock();
     
-    let upper_claws = new UpperClaws(material).upperClaws;
-    let lower_claws = new THREE.Group();
+    let upperClawsGroup = new THREE.Group();
+    let lowerClawsGroup = new THREE.Group();
 
     let height = 4;
 
@@ -369,55 +373,43 @@ class Claws {
     );
     claw_base.position.set(0, height, 0);
 
-    
-    //------------------------------------------------------------------------------------------------------------
+    let upperClaws = new UpperClaws(material).upperClaws;
 
-    let lower_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_1.position.set(5, -8, 5);
-    lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 4); // Rotate 45 degrees around X axis
-    
-    let lower_claw_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_2.position.set(-5, -8, -5);
-    lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
+    let bottomClaws = new BottomClaws(material).bottomClaws;
+    upperClawsGroup.add(upperClaws);
+    lowerClawsGroup.add(bottomClaws);
 
-    let lower_claw_3 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_3.position.set(-5, -8, 5);
-    lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    let lower_claw_4 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_4.position.set(5, -8, -5);
-    lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    lower_claws.add(lower_claw_1, lower_claw_2, lower_claw_3, lower_claw_4);
-
-    this.clawsGroup.add(upper_claws, lower_claws, claw_base);
+    camera.position.set(0, -5, 0);
+    camera.lookAt(0, -6, 0);
+    this.clawsGroup.add(upperClawsGroup, lowerClawsGroup, claw_base, camera);
+    this.clawsGroup.position.set(this.clawsGroup.position.x, this.clawsMinPosition, this.clawsGroup.position.z);
+    document.addEventListener("elevateClawsEvent", this.handleElevateClaws.bind(this));
   }
   
-  handleElevateCrane(event) {
+  handleElevateClaws(event) {
     this.clawsDirection = event.detail.direction;
+  }
+
+  elevateClaws(deltaTime) {
+    let newPosition = this.clawsGroup.position.y + this.clawsDirection * deltaTime * this.clawsSpeed;
+
+    if (newPosition > this.clawsMinPosition) {
+      newPosition = this.clawsMinPosition;
+    } else if(newPosition < this.clawsMaxPosition) {
+      newPosition = this.clawsMaxPosition;
+    }
+
+    this.rope.position.set(this.rope.position.x, newPosition / 2 + 2.5, this.rope.position.z);
+    this.rope.scale.set(this.rope.scale.x, newPosition, this.rope.scale.z);
+    this.clawsGroup.position.set(this.clawsGroup.position.x, newPosition, this.clawsGroup.position.z);
   }
 
   update() {
     let deltaTime = this.clock.getDelta();
 
-    if (this.clawsDirection === 0) {
-      return;
+    if (this.clawsDirection !== 0) {
+      this.elevateClaws(deltaTime);
     }
-
-    let newPosition = this.clawsGroup.position.y + this.clawsDirection * deltaTime * this.clawsSpeed;
-    this.clawsGroup.position.set(this.clawsGroup.position.x, newPosition, this.clawsGroup.position.z);
   }
 }
 
@@ -487,7 +479,7 @@ class Cabine {
 }
 
 class TopCrane {
-  constructor() {
+  constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.yellow,
       wireframe: wireframe_value
@@ -513,9 +505,9 @@ class TopCrane {
     backLine.position.x -= 22.5;
     let mainLine = new MainLine(material).mainLine;
     mainLine.position.x -= 22.5;
-    this.cart = new Cart();
+    this.cart = new Cart(camera);
     
-    this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, this.cart.cartModel);
+    this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, this.cart.cartGroup);
 
     document.addEventListener(
       "rotateCraneEvent",
@@ -576,45 +568,54 @@ class Exterior {
 }
 
 class Cart {
-  constructor() {
-    this.cartModel = new THREE.Group();
+  constructor(camera) {
+    this.cartGroup = new THREE.Group();
     this.clock = new THREE.Clock();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
       wireframe: true
     });
-    this.cartModel.add(new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material));
+    
+    let cart = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material);
+    this.claws = new Claws(camera);
+
+    this.cartGroup.add(cart, this.claws.clawsGroup, this.claws.rope);
     
     this.cartDirection = 0;
-    this.cartSpeed = 10;
-    this.cartMaxPosition = 10;
+    this.cartSpeed = 60;
+    this.cartMaxPosition = 90;
+    this.cartMinPosition = 22;
+    this.cartGroup.position.set(this.cartMinPosition, 89, this.cartGroup.position.z);
     
     document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
   }
 
   handleMoveCart(event) {
-    this.cartVelocity = event.detail.direction;
-    console.log(this.cartModel.rotation);
+    this.cartDirection = event.detail.direction;
+  }
+
+  moveCart(deltaTime) {
+    let nextPosition = this.cartGroup.position.x + this.cartDirection * this.cartSpeed * deltaTime;
+    if (nextPosition > this.cartMaxPosition) {
+      nextPosition = this.cartMaxPosition;
+    } else if (nextPosition < this.cartMinPosition) {
+      nextPosition = this.cartMinPosition;
+    }
+    this.cartGroup.position.set(nextPosition, this.cartGroup.position.y, this.cartGroup.position.z);
   }
 
   update() {
+    this.claws.update();
     let deltaTime = this.clock.getDelta();
     
-    if (this.cartDirection === 0) {
-      return;
+    if (this.cartDirection !== 0) {
+      this.moveCart(deltaTime);
     }
-    
-    let nextPosition = this.cartModel.position.x + this.cartDirection * this.cartSpeed * deltaTime;
-    if (nextPosition > this.cartMaxPosition) {
-      nextPosition = this.cartMaxPosition;
-    } else if (nextPosition < 0) {
-      nextPosition = 0;
-    }
-    this.cartModel.position.set(nextPosition, this.cartModel.position.y, this.cartModel.position.z);
   }
 }
+
 class Crane {
-  constructor() {
+  constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.grey,
       wireframe: wireframe_value
@@ -622,11 +623,10 @@ class Crane {
 
     this.craneGroup = new THREE.Group();
 
-    this.claws = new Claws();
-
     let base = new Base(material).base;
     let tower = new Tower(material).tower;
-    this.topCrane = new TopCrane();
+
+    this.topCrane = new TopCrane(camera);
 
     this.craneGroup.add(base, tower, this.topCrane.topCraneGroup);
   }
@@ -690,7 +690,7 @@ class MainScene {
 }
 
 new Input();
-let crane = new Crane();
-let cameras = new Cameras(crane);
+let cameras = new Cameras();
+let crane = new Crane(cameras.camerasList[5]);
 let mainScene = new MainScene(crane, cameras);
 mainScene.animate();
