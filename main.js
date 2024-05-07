@@ -301,15 +301,15 @@ class Crane {
     let topBackCrane = new THREE.Group();
 
     let counterWeight = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 10, 5),
+      new THREE.BoxGeometry(10, 15, 5),
       material
     );
-    counterWeight.position.set(0, 85, 0);
+    counterWeight.position.set(0, 87.5, 0);
 
     topBackCrane.add(counterWeight);
 
     let counterJib = new THREE.Mesh(new THREE.BoxGeometry(35, 5, 5), material);
-    counterJib.position.set(8.150, 92.5, 0);
+    counterJib.position.set(8.650, 92.5, 0);
 
     topBackCrane.add(counterJib);
 
@@ -322,19 +322,28 @@ class Crane {
 
     topBackCrane.add(this.spear_holder);
 
-    this.stay_rod = new THREE.Mesh(
+    this.stay_rod_1 = new THREE.Mesh(
       new THREE.CylinderGeometry(0.1, 0.1, 30, 64),
       material
     );
-    this.stay_rod.rotateOnAxis(new THREE.Vector3(0, 0, -11), Math.PI / 32);
-    this.stay_rod.position.set(8, 101, 0);
+    this.stay_rod_1.rotateOnAxis(new THREE.Vector3(0, 0, -11), Math.PI / 32);
+    this.stay_rod_1.position.set(7.4, 101, 0);
     
-    topBackCrane.add(this.stay_rod);
+    topBackCrane.add(this.stay_rod_1);
+
+    this.stay_rod_2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 93.275, 64),
+      material
+    );
+    this.stay_rod_2.rotateOnAxis(new THREE.Vector3(0, 0, -1), -82.608 * Math.PI / 180);
+    this.stay_rod_2.position.set(70, 101, 0);
+    
+    topBackCrane.add(this.stay_rod_2);
 
     let Jib = new THREE.Mesh(new THREE.CylinderGeometry(3.33, 3.33, 90, 3), material);
     Jib.rotateOnAxis(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
     Jib.rotateOnAxis(new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
-    Jib.position.set(70.777777, 92.5, 0);
+    Jib.position.set(71.1, 93.33, 0);
 
     topBackCrane.add(Jib);
     
