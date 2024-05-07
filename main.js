@@ -1,7 +1,7 @@
 import * as THREE from "three";
 // 'use strict';
 
-let wireframe_value = true;
+let wireframe_value = false;
 
 class Input {
   constructor() {
@@ -22,6 +22,7 @@ class Input {
     switch (event.code) {
       case "Digit1":
         wireframe_value = !wireframe_value;
+        document.dispatchEvent(new CustomEvent("changeWireframe"));
       case "Digit2":
       case "Digit3":
       case "Digit4":
@@ -205,7 +206,7 @@ class Cameras {
       1,
       1000
     );
-    lateralCamera.position.x = 50;
+    lateralCamera.position.x = 500;
     
     lateralCamera.lookAt(0, 0, 0);
     lateralCamera.position.y = 50;
@@ -346,7 +347,7 @@ class Claws {
   constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: true
+      wireframe: wireframe_value
     });
     
     this.clawsGroup = new THREE.Group();
@@ -354,7 +355,7 @@ class Claws {
     this.clawsDirection = 0;
     this.clawsSpeed = 50;
     this.clawsMinPosition = -15;
-    this.clawsMaxPosition = -70;
+    this.clawsMaxPosition = -80;
     
     this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
     this.rope.scale.set(1, this.clawsMinPosition, 1);
@@ -507,7 +508,7 @@ class TopCrane {
 
     this.clock = new THREE.Clock();
     this.rotateDirection = 0;
-    this.rotationSpeed = 10;
+    this.rotationSpeed = 3;
 
     this.topCraneGroup = new THREE.Group();
 
@@ -578,14 +579,26 @@ class Tower {
 
 class Exterior {
   constructor() {
-    this.exteriorModels = new THREE.Group();
+    this.exteriorGroup = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: true
+      wireframe: wireframe_value
     });
-    this.container = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), material);
-    this.container.position.set(0, 0, 25);
-    this.exteriorModels.add(this.container);
+    let containerGroup = new THREE.Group();
+    let containerSideA = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 1), material);
+    let containerSideB = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 1), material);
+    let containerSideC = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 20), material);
+    let containerSideD = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 20), material);
+    let containerBottom = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), material);
+    containerSideA.position.set(0, 0, -9.5);
+    containerSideB.position.set(0, 0, 9.5);
+    containerSideC.position.set(9.5, 0, 0);
+    containerSideD.position.set(-9.5, 0, 0);
+    containerBottom.position.set(0, -4.5, 0);
+    containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
+    containerGroup.position.set(70, 5, 70);
+    
+    this.exteriorGroup.add(containerGroup);
   }
 }
 
@@ -659,7 +672,7 @@ class Crane {
 }
 
 class MainScene {
-  constructor(crane, cameras) {
+  constructor(crane, exterior, cameras) {
     this.cameras = cameras;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("lightblue");
@@ -675,12 +688,22 @@ class MainScene {
     this.animate = this.animate.bind(this);
     
     this.scene.add(crane.craneGroup);
+    this.scene.add(exterior.exteriorGroup);
     window.addEventListener("resize", this.resize.bind(this));
+    document.addEventListener("changeWireframe", this.handleChangeWireframe.bind(this));
   }
   animate() {
     requestAnimationFrame(this.animate);
     crane.update();
     this.renderer.render(this.scene, this.cameras.currentCamera);
+  }
+
+  handleChangeWireframe() {
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.material.wireframe = wireframe_value;
+      }
+    });
   }
   
   resize() {
@@ -714,5 +737,6 @@ class MainScene {
 new Input();
 let cameras = new Cameras();
 let crane = new Crane(cameras.camerasList[5]);
-let mainScene = new MainScene(crane, cameras);
+let exterior = new Exterior();
+let mainScene = new MainScene(crane, exterior, cameras);
 mainScene.animate();
