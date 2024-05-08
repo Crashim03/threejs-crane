@@ -16,19 +16,24 @@ class Input {
 
     this.elevateCranePositive = false;
     this.elevateCraneNegative = false;
+
+    this.closeClawsPositive = false;
+    this.closeClawsNegative = false;
   }
 
   handleKeyDown(event) {
     switch (event.code) {
       case "Digit1":
-        wireframe_value = !wireframe_value;
-        document.dispatchEvent(new CustomEvent("changeWireframe"));
       case "Digit2":
       case "Digit3":
       case "Digit4":
       case "Digit5":
       case "Digit6":
         this.dispatchSwitchCameraEvent(parseInt(event.key), true);
+        break;
+      case "Digit7":
+        wireframe_value = !wireframe_value;
+        document.dispatchEvent(new CustomEvent("changeWireframe"));
         break;
       case "KeyQ":
         this.dispatchRotateCraneEvent(1, true);
@@ -48,6 +53,11 @@ class Input {
       case "KeyD":
         this.dispatchElevateClawsEvent(-1, true);
         break;
+      case "KeyR":
+        this.dispatchCloseClawsEvent(1, true);
+        break;
+      case "KeyF":
+        this.dispatchCloseClawsEvent(-1, true);
       default:
         break;
     }
@@ -86,6 +96,11 @@ class Input {
       case "KeyD":
         this.dispatchElevateClawsEvent(-1, false);
         break;
+      case "KeyR":
+        this.dispatchCloseClawsEvent(1, false);
+        break;
+      case "KeyF":
+        this.dispatchCloseClawsEvent(-1, false);
       default:
         break;
     }
@@ -175,6 +190,30 @@ class Input {
     });
     console.log("Elevate Claws: " + direction);
     document.dispatchEvent(elevateCranteEvent);
+  }
+
+  dispatchCloseClawsEvent(direction, isPressed) {
+    if (direction === 1) {
+      this.closeClawsPositive = isPressed;
+    } else if (direction === -1) {
+      this.closeClawsNegative = isPressed;
+    }
+
+    if ((this.closeClawsPositive && this.closeClawsNegative) ||
+      (!this.closeClawsPositive && !this.closeClawsNegative)
+    ) {
+      direction = 0;
+    } else if (this.closeClawsPositive) {
+      direction = 1;
+    } else if (this.closeClawsNegative) { 
+      direction = -1;
+    }
+
+    const closeClawsEvent = new CustomEvent("closeClawsEvent", {
+      detail: { direction: direction },
+    });
+    console.log("Close Claws: " + direction);
+    document.dispatchEvent(closeClawsEvent);
   }
 }
 
@@ -352,14 +391,20 @@ class Claws {
     
     this.clawsGroup = new THREE.Group();
     
-    this.clawsDirection = 0;
-    this.clawsSpeed = 50;
-    this.clawsMinPosition = -15;
-    this.clawsMaxPosition = -80;
+    this.elevateClawsDirection = 0;
+    this.elevateClawsSpeed = 50;
+    this.elevateClawsMinPosition = -15;
+    this.elevateClawsMaxPosition = -80;
+
+    this.closeClawsDirection = 0;
+    this.closeClawsSpeed = 5;
+    this.closeClawsMinAngle = 0;
+    this.closeClawsMaxAngle = 10;
+    this.clawsClosed = false;
     
     this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
-    this.rope.scale.set(1, this.clawsMinPosition, 1);
-    this.rope.position.set(this.rope.position.x, this.clawsMinPosition / 2.5 + 1, this.rope.position.z);
+    this.rope.scale.set(1, this.elevateClawsMinPosition, 1);
+    this.rope.position.set(this.rope.position.x, this.elevateClawsMinPosition / 2.5 + 1, this.rope.position.z);
 
     this.clock = new THREE.Clock();
     
@@ -368,11 +413,11 @@ class Claws {
 
     let height = 4;
 
-    let claw_base = new THREE.Mesh(
+    let clawBase = new THREE.Mesh(
       new THREE.CylinderGeometry(6, 6, height),
       material
     );
-    claw_base.position.set(0, height, 0);
+    clawBase.position.set(0, height, 0);
 
     let upperClaws = new UpperClaws(material).upperClaws;
 
@@ -380,24 +425,47 @@ class Claws {
     upperClawsGroup.add(upperClaws);
     lowerClawsGroup.add(bottomClaws);
 
+    let upper_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upper_claw_1.position.set(0, -5, 0);
+    
+    let lower_claw_1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 6),
+      material
+    );
+    lower_claw_1.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 6);
+    lower_claw_1.position.set(0, -12, -1);
+
+    this.clawGroupTest = new THREE.Group();
+    this.clawGroupTest.add(upper_claw_1, lower_claw_1);
+    this.clawGroupTest.position.set(0, 2, 5);
+
     camera.position.set(0, -5, 0);
     camera.lookAt(0, -6, 0);
-    this.clawsGroup.add(upperClawsGroup, lowerClawsGroup, claw_base, camera);
-    this.clawsGroup.position.set(this.clawsGroup.position.x, this.clawsMinPosition, this.clawsGroup.position.z);
+    this.clawsGroup.add(clawBase, camera, this.clawGroupTest);
+    this.clawsGroup.position.set(this.clawsGroup.position.x, this.elevateClawsMinPosition, this.clawsGroup.position.z);
+
     document.addEventListener("elevateClawsEvent", this.handleElevateClaws.bind(this));
+    document.addEventListener("closeClawsEvent", this.handleCloseClaws.bind(this));
   }
   
   handleElevateClaws(event) {
-    this.clawsDirection = event.detail.direction;
+    this.elevateClawsDirection = event.detail.direction;
   }
 
-  elevateClaws(deltaTime) {
-    let newPosition = this.clawsGroup.position.y + this.clawsDirection * deltaTime * this.clawsSpeed;
+  handleCloseClaws(event) {
+    this.closeClawsDirection = event.detail.direction;
+  }
 
-    if (newPosition > this.clawsMinPosition) {
-      newPosition = this.clawsMinPosition;
-    } else if(newPosition < this.clawsMaxPosition) {
-      newPosition = this.clawsMaxPosition;
+  elevateClaws(direction, deltaTime) {
+    let newPosition = this.clawsGroup.position.y + direction * deltaTime * this.elevateClawsSpeed;
+
+    if (newPosition > this.elevateClawsMinPosition) {
+      newPosition = this.elevateClawsMinPosition;
+    } else if(newPosition < this.elevateClawsMaxPosition) {
+      newPosition = this.elevateClawsMaxPosition;
     }
 
     this.rope.position.set(this.rope.position.x, newPosition / 2 + 2.5, this.rope.position.z);
@@ -405,11 +473,19 @@ class Claws {
     this.clawsGroup.position.set(this.clawsGroup.position.x, newPosition, this.clawsGroup.position.z);
   }
 
+  closeClaws(direction, deltaTime) {
+    this.clawGroupTest.rotateOnAxis(new THREE.Vector3(1, 0, 0), direction * deltaTime * this.closeClawsSpeed);
+  }
+
   update() {
     let deltaTime = this.clock.getDelta();
 
-    if (this.clawsDirection !== 0) {
-      this.elevateClaws(deltaTime);
+    if (this.elevateClawsDirection !== 0) {
+      this.elevateClaws(this.elevateClawsDirection, deltaTime);
+    }
+
+    if (this.closeClawsDirection !== 0) {
+      this.closeClaws(this.closeClawsDirection, deltaTime);
     }
   }
 }
@@ -542,10 +618,10 @@ class TopCrane {
     this.rotateDirection = event.detail.direction;
   }
 
-  rotateCrane(deltaTime) {
+  rotateCrane(direction, deltaTime) {
     this.topCraneGroup.rotateOnAxis(
       new THREE.Vector3(0, 1, 0),
-      this.rotateDirection * deltaTime * this.rotationSpeed
+      direction * deltaTime * this.rotationSpeed
     );
   }
 
@@ -554,7 +630,7 @@ class TopCrane {
 
     let deltaTime = this.clock.getDelta();
     if (this.rotateDirection !== 0) {
-      this.rotateCrane(deltaTime);
+      this.rotateCrane(this.rotateDirection, deltaTime);
     }
   }
 }
@@ -597,7 +673,7 @@ class Exterior {
     containerBottom.position.set(0, -4.5, 0);
     containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
     containerGroup.position.set(70, 5, 70);
-    
+
     this.exteriorGroup.add(containerGroup);
   }
 }
@@ -629,8 +705,8 @@ class Cart {
     this.cartDirection = event.detail.direction;
   }
 
-  moveCart(deltaTime) {
-    let nextPosition = this.cartGroup.position.x + this.cartDirection * this.cartSpeed * deltaTime;
+  moveCart(direction, deltaTime) {
+    let nextPosition = this.cartGroup.position.x + direction * this.cartSpeed * deltaTime;
     if (nextPosition > this.cartMaxPosition) {
       nextPosition = this.cartMaxPosition;
     } else if (nextPosition < this.cartMinPosition) {
@@ -644,7 +720,7 @@ class Cart {
     let deltaTime = this.clock.getDelta();
     
     if (this.cartDirection !== 0) {
-      this.moveCart(deltaTime);
+      this.moveCart(this.cartDirection, deltaTime);
     }
   }
 }
