@@ -397,9 +397,10 @@ class Claws {
     this.elevateClawsMaxPosition = -80;
 
     this.closeClawsDirection = 0;
-    this.closeClawsSpeed = 5;
+    this.closeClawsSpeed = 1;
     this.closeClawsMinAngle = 0;
-    this.closeClawsMaxAngle = 10;
+    this.closeClawsAngle = this.closeClawsMinAngle;
+    this.closeClawsMaxAngle = 1;
     this.clawsClosed = false;
     
     this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
@@ -408,9 +409,6 @@ class Claws {
 
     this.clock = new THREE.Clock();
     
-    let upperClawsGroup = new THREE.Group();
-    let lowerClawsGroup = new THREE.Group();
-
     let height = 4;
 
     let clawBase = new THREE.Mesh(
@@ -419,36 +417,51 @@ class Claws {
     );
     clawBase.position.set(0, height, 0);
 
-    let upperClaws = new UpperClaws(material).upperClaws;
+    this.claws1 = this.createClaws(material);
+    this.claws1.position.set(0, 2, 5);
+    this.claws1.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 3);
 
-    let bottomClaws = new BottomClaws(material).bottomClaws;
-    upperClawsGroup.add(upperClaws);
-    lowerClawsGroup.add(bottomClaws);
-
-    let upper_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    upper_claw_1.position.set(0, -5, 0);
+    this.claws2 = this.createClaws(material);
+    this.claws2.rotateY(Math.PI / 2);
+    this.claws2.position.set(5, 2, 0);
+    this.claws2.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 3);
     
-    let lower_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 6),
-      material
-    );
-    lower_claw_1.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 6);
-    lower_claw_1.position.set(0, -12, -1);
+    this.claws3 = this.createClaws(material);
+    this.claws3.rotateY(Math.PI);
+    this.claws3.position.set(0, 2, -5);
+    this.claws3.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 3);
 
-    this.clawGroupTest = new THREE.Group();
-    this.clawGroupTest.add(upper_claw_1, lower_claw_1);
-    this.clawGroupTest.position.set(0, 2, 5);
+    this.claws4 = this.createClaws(material);
+    this.claws4.rotateY(-Math.PI / 2);
+    this.claws4.position.set(-5, 2, 0);
+    this.claws4.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 3);
 
     camera.position.set(0, -5, 0);
     camera.lookAt(0, -6, 0);
-    this.clawsGroup.add(clawBase, camera, this.clawGroupTest);
+    this.clawsGroup.add(clawBase, camera, this.claws1, this.claws2, this.claws3, this.claws4);
     this.clawsGroup.position.set(this.clawsGroup.position.x, this.elevateClawsMinPosition, this.clawsGroup.position.z);
 
     document.addEventListener("elevateClawsEvent", this.handleElevateClaws.bind(this));
     document.addEventListener("closeClawsEvent", this.handleCloseClaws.bind(this));
+  }
+
+  createClaws(material) {
+    let upperClaw = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 10),
+      material
+    );
+    upperClaw.position.set(0, -5, 0);
+    
+    let lowerClaw = new THREE.Mesh(
+      new THREE.CylinderGeometry(2, 2, 6),
+      material
+    );
+    lowerClaw.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 6);
+    lowerClaw.position.set(0, -12, -1);
+
+    let claws = new THREE.Group();
+    claws.add(upperClaw, lowerClaw);
+    return claws;
   }
   
   handleElevateClaws(event) {
@@ -474,7 +487,18 @@ class Claws {
   }
 
   closeClaws(direction, deltaTime) {
-    this.clawGroupTest.rotateOnAxis(new THREE.Vector3(1, 0, 0), direction * deltaTime * this.closeClawsSpeed);
+    let newRotation = direction * deltaTime * this.closeClawsSpeed;
+
+    // Check if the new rotation is within the desired range
+    if (this.closeClawsAngle + newRotation < this.closeClawsMaxAngle && this.closeClawsAngle + newRotation > this.closeClawsMinAngle) {
+      this.claws1.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
+      this.claws2.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
+      this.claws3.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
+      this.claws4.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
+
+      // Update the current rotation
+      this.closeClawsAngle += newRotation;
+    }
   }
 
   update() {
@@ -584,7 +608,7 @@ class TopCrane {
 
     this.clock = new THREE.Clock();
     this.rotateDirection = 0;
-    this.rotationSpeed = 3;
+    this.rotationSpeed = 2;
 
     this.topCraneGroup = new THREE.Group();
 
@@ -684,7 +708,7 @@ class Cart {
     this.clock = new THREE.Clock();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: true
+      wireframe: wireframe_value
     });
     
     let cart = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material);
