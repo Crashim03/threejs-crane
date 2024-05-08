@@ -656,7 +656,7 @@ class CargoTorus {
       color: THREE.Color.NAMES.darkblue,
       wireframe: wireframeValue
     });
-    this.cargoTorus = new THREE.Mesh(new THREE.TorusGeometry(5, 1.5), material);
+    this.cargoTorus = new THREE.Mesh(new THREE.TorusGeometry(3.33, 1), material);
   }
 }
 
@@ -667,7 +667,7 @@ class CargoTorusKnot {
       color: THREE.Color.NAMES.violet,
       wireframe: wireframeValue
     });
-    this.cargoTorusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(5, 1.5), material);
+    this.cargoTorusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(3.33, 1), material);
   }
 }
 
@@ -696,16 +696,16 @@ class Exterior {
       wireframe: wireframeValue
     });
     let containerGroup = new THREE.Group();
-    let containerSideA = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 1), material);
-    let containerSideB = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 1), material);
-    let containerSideC = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 20), material);
-    let containerSideD = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 20), material);
-    let containerBottom = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), material);
-    containerSideA.position.set(0, 0, -9.5);
-    containerSideB.position.set(0, 0, 9.5);
-    containerSideC.position.set(9.5, 0, 0);
-    containerSideD.position.set(-9.5, 0, 0);
-    containerBottom.position.set(0, -4.5, 0);
+    let containerSideA = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 2), material);
+    let containerSideB = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 2), material);
+    let containerSideC = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 40), material);
+    let containerSideD = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 40), material);
+    let containerBottom = new THREE.Mesh(new THREE.BoxGeometry(40, 2, 40), material);
+    containerSideA.position.set(0, 0, -19);
+    containerSideB.position.set(0, 0, 19);
+    containerSideC.position.set(19, 0, 0);
+    containerSideD.position.set(-19, 0, 0);
+    containerBottom.position.set(0, -8, 0);
     containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
     containerGroup.position.set(70, 5, 70);
 
