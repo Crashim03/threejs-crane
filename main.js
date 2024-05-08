@@ -616,6 +616,61 @@ class Tower {
   }
 }
 
+class CargoCube {
+  
+  constructor(){
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.red,
+      wireframe: wireframeValue
+    });
+    this.cargoCube = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), material);
+  }
+}
+
+class CargoDodecahedron {
+  
+  constructor(){
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.purple,
+      wireframe: wireframeValue
+    });
+    this.cargoDodecahedron = new THREE.Mesh(new THREE.DodecahedronGeometry(5, 0), material);
+  }
+}
+
+class CargoIcosahedron {
+  
+  constructor(){
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.teal,
+      wireframe: wireframeValue
+    });
+    this.cargoIcosahedron = new THREE.Mesh(new THREE.IcosahedronGeometry(5, 0), material);
+  }
+}
+
+class CargoTorus {
+  
+  constructor(){
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.darkblue,
+      wireframe: wireframeValue
+    });
+    this.cargoTorus = new THREE.Mesh(new THREE.TorusGeometry(5, 1.5), material);
+  }
+}
+
+class CargoTorusKnot {
+  
+  constructor(){
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.violet,
+      wireframe: wireframeValue
+    });
+    this.cargoTorusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(5, 1.5), material);
+  }
+}
+
 class Cargo {
   constructor(mesh, colliderRadius) {
     this.cargoGroup = new THREE.Group();
@@ -637,7 +692,7 @@ class Exterior {
   constructor() {
     this.exteriorGroup = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({
-      color: THREE.Color.NAMES.green,
+      color: THREE.Color.NAMES.chocolate,
       wireframe: wireframeValue
     });
     let containerGroup = new THREE.Group();
@@ -654,10 +709,28 @@ class Exterior {
     containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
     containerGroup.position.set(70, 5, 70);
 
-    let cargo = new Cargo(new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), material), 5).cargoGroup;
-    cargo.position.set(10, 0, 40);
+    let cargoGroup = new THREE.Group();
 
-    this.exteriorGroup.add(containerGroup, cargo);
+    let cargoCube = new Cargo(new CargoCube().cargoCube, 5).cargoGroup;
+    cargoCube.position.set(10, 0, 40);
+
+    let cargoDodecahedron = new Cargo(new CargoDodecahedron().cargoDodecahedron, 5).cargoGroup;
+    cargoDodecahedron.position.set(40, 0, 40);
+    
+    let cargoIcosahedron = new Cargo(new CargoIcosahedron().cargoIcosahedron, 5).cargoGroup;
+    cargoIcosahedron.position.set(70, 0, 40);
+
+    let cargoTorus = new Cargo(new CargoTorus().cargoTorus, 5).cargoGroup;
+    cargoTorus.position.set(100, 0, 40);
+    
+    let cargoTorusKnot = new Cargo(new CargoTorusKnot().cargoTorusKnot, 5).cargoGroup;
+    cargoTorusKnot.position.set(130, 0, 40);
+    
+    
+    cargoGroup.add(cargoCube, cargoDodecahedron, cargoIcosahedron, cargoTorus, cargoTorusKnot);
+
+
+    this.exteriorGroup.add(containerGroup, cargoGroup);
   }
 }
 
