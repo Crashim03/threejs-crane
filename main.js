@@ -1,7 +1,9 @@
 import * as THREE from "three";
 // 'use strict';
 
-let wireframe_value = false;
+let wireframeValue = false;
+let collidersVisible = false;
+let colliders = [];
 
 class Input {
   constructor() {
@@ -32,7 +34,7 @@ class Input {
         this.dispatchSwitchCameraEvent(parseInt(event.key), true);
         break;
       case "Digit7":
-        wireframe_value = !wireframe_value;
+        wireframeValue = !wireframeValue;
         document.dispatchEvent(new CustomEvent("changeWireframe"));
         break;
       case "KeyQ":
@@ -54,10 +56,10 @@ class Input {
         this.dispatchElevateClawsEvent(-1, true);
         break;
       case "KeyR":
-        this.dispatchCloseClawsEvent(1, true);
+        this.dispatchCloseClawsEvent(-1, true);
         break;
       case "KeyF":
-        this.dispatchCloseClawsEvent(-1, true);
+        this.dispatchCloseClawsEvent(1, true);
       default:
         break;
     }
@@ -97,10 +99,10 @@ class Input {
         this.dispatchElevateClawsEvent(-1, false);
         break;
       case "KeyR":
-        this.dispatchCloseClawsEvent(1, false);
+        this.dispatchCloseClawsEvent(-1, false);
         break;
       case "KeyF":
-        this.dispatchCloseClawsEvent(-1, false);
+        this.dispatchCloseClawsEvent(1, false);
       default:
         break;
     }
@@ -132,7 +134,7 @@ class Input {
       direction = 0;
     } else if (this.rotateCranePositive) {
       direction = 1;
-    } else if (this.rotateCraneNegative) { 
+    } else if (this.rotateCraneNegative) {
       direction = -1;
     }
 
@@ -157,7 +159,7 @@ class Input {
       direction = 0;
     } else if (this.moveCartPositive) {
       direction = 1;
-    } else if (this.moveCartNegative) { 
+    } else if (this.moveCartNegative) {
       direction = -1;
     }
 
@@ -181,7 +183,7 @@ class Input {
       direction = 0;
     } else if (this.elevateCranePositive) {
       direction = 1;
-    } else if (this.elevateCraneNegative) { 
+    } else if (this.elevateCraneNegative) {
       direction = -1;
     }
 
@@ -205,7 +207,7 @@ class Input {
       direction = 0;
     } else if (this.closeClawsPositive) {
       direction = 1;
-    } else if (this.closeClawsNegative) { 
+    } else if (this.closeClawsNegative) {
       direction = -1;
     }
 
@@ -221,10 +223,10 @@ class Cameras {
   constructor() {
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
-    
+
     const aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
     const frustumSize = 200;
-    
+
     const frontalCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspect) / 2,
       (frustumSize * aspect) / 2,
@@ -236,7 +238,7 @@ class Cameras {
     frontalCamera.position.z = 500;
     frontalCamera.lookAt(0, 0, 0);
     frontalCamera.position.y = 50;
-    
+
     const lateralCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspect) / 2,
       (frustumSize * aspect) / 2,
@@ -246,10 +248,10 @@ class Cameras {
       1000
     );
     lateralCamera.position.x = 500;
-    
+
     lateralCamera.lookAt(0, 0, 0);
     lateralCamera.position.y = 50;
-    
+
     const topCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspect) / 2,
       (frustumSize * aspect) / 2,
@@ -260,7 +262,7 @@ class Cameras {
     );
     topCamera.position.y = 100;
     topCamera.lookAt(0, 0, 0);
-    
+
     const fixedOrtCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspect) / 2,
       (frustumSize * aspect) / 2,
@@ -271,15 +273,15 @@ class Cameras {
     );
     fixedOrtCamera.position.set(150, 150, 150);
     fixedOrtCamera.lookAt(0, 0, 0);
-    
+
     const fixedPersCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
     fixedPersCamera.position.set(150, 150, 150);
     fixedPersCamera.lookAt(0, 0, 0);
-    
+
     const movableCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
     movableCamera.position.set(150, 150, 150);
     movableCamera.lookAt(0, 0, 0);
-    
+
     this.camerasList = [
       frontalCamera,
       lateralCamera,
@@ -293,9 +295,9 @@ class Cameras {
       "switchCameraEvent",
       this.handleSwitchCamera.bind(this)
     );
-    
+
   }
-  
+
   handleSwitchCamera(event) {
     if (
       !event.detail.isPressed ||
@@ -303,82 +305,9 @@ class Cameras {
     ) {
       return;
     }
-    
+
     this.currentCamera = this.camerasList[event.detail.camera - 1];
     console.log("Switched to camera: " + event.detail.camera);
-  }
-}
-
-class UpperClaws {
-  constructor(material) {
-    this.upperClaws = new THREE.Group();
-
-    let upper_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    upper_claw_1.position.set(5, -2, 5);
-    upper_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 8); // Rotate 45 degrees around X axis
-
-    let upper_claw_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    upper_claw_2.position.set(-5, -2, -5);
-    upper_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    let upper_claw_3 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    upper_claw_3.position.set(-5, -2, 5);
-    upper_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    let upper_claw_4 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 10),
-      material
-    );
-    upper_claw_4.position.set(5, -2, -5);
-    upper_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), -Math.PI / 8); // Rotate 45 degrees around X axis
-
-    this.upperClaws.add(upper_claw_1, upper_claw_2, upper_claw_3, upper_claw_4);
-  }
-}
-
-class BottomClaws {
-  constructor(material) {
-
-    this.bottomClaws = new THREE.Group();
-
-    let lower_claw_1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_1.position.set(5, -8, 5);
-    lower_claw_1.rotateOnAxis(new THREE.Vector3(-1, 0, 1), -Math.PI / 4); // Rotate 45 degrees around X axis
-    
-    let lower_claw_2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_2.position.set(-5, -8, -5);
-    lower_claw_2.rotateOnAxis(new THREE.Vector3(-1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    let lower_claw_3 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_3.position.set(-5, -8, 5);
-    lower_claw_3.rotateOnAxis(new THREE.Vector3(1, 0, 1), Math.PI / 4); // Rotate 45 degrees around X axis
-
-    let lower_claw_4 = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 5),
-      material
-    );
-    lower_claw_4.position.set(5, -8, -5);
-    lower_claw_4.rotateOnAxis(new THREE.Vector3(-1, 0, -1), Math.PI / 4); // Rotate 45 degrees around X axis
-    
-    this.bottomClaws.add(lower_claw_1, lower_claw_2, lower_claw_3, lower_claw_4);
   }
 }
 
@@ -386,11 +315,11 @@ class Claws {
   constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: wireframe_value
+      wireframe: wireframeValue
     });
-    
+
     this.clawsGroup = new THREE.Group();
-    
+
     this.elevateClawsDirection = 0;
     this.elevateClawsSpeed = 50;
     this.elevateClawsMinPosition = -15;
@@ -401,14 +330,16 @@ class Claws {
     this.closeClawsMinAngle = 0;
     this.closeClawsAngle = this.closeClawsMinAngle;
     this.closeClawsMaxAngle = 1;
-    this.clawsClosed = false;
-    
+
+    this.collider = new Collider(17, "Claws", this).colliderObject;
+    this.collider.position.set(0, -3, 0);
+
     this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
     this.rope.scale.set(1, this.elevateClawsMinPosition, 1);
     this.rope.position.set(this.rope.position.x, this.elevateClawsMinPosition / 2.5 + 1, this.rope.position.z);
 
     this.clock = new THREE.Clock();
-    
+
     let height = 4;
 
     let clawBase = new THREE.Mesh(
@@ -425,7 +356,7 @@ class Claws {
     this.claws2.rotateY(Math.PI / 2);
     this.claws2.position.set(5, 2, 0);
     this.claws2.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI / 3);
-    
+
     this.claws3 = this.createClaws(material);
     this.claws3.rotateY(Math.PI);
     this.claws3.position.set(0, 2, -5);
@@ -438,7 +369,7 @@ class Claws {
 
     camera.position.set(0, -5, 0);
     camera.lookAt(0, -6, 0);
-    this.clawsGroup.add(clawBase, camera, this.claws1, this.claws2, this.claws3, this.claws4);
+    this.clawsGroup.add(clawBase, camera, this.claws1, this.claws2, this.claws3, this.claws4, this.collider);
     this.clawsGroup.position.set(this.clawsGroup.position.x, this.elevateClawsMinPosition, this.clawsGroup.position.z);
 
     document.addEventListener("elevateClawsEvent", this.handleElevateClaws.bind(this));
@@ -451,7 +382,7 @@ class Claws {
       material
     );
     upperClaw.position.set(0, -5, 0);
-    
+
     let lowerClaw = new THREE.Mesh(
       new THREE.CylinderGeometry(2, 2, 6),
       material
@@ -463,7 +394,7 @@ class Claws {
     claws.add(upperClaw, lowerClaw);
     return claws;
   }
-  
+
   handleElevateClaws(event) {
     this.elevateClawsDirection = event.detail.direction;
   }
@@ -477,7 +408,7 @@ class Claws {
 
     if (newPosition > this.elevateClawsMinPosition) {
       newPosition = this.elevateClawsMinPosition;
-    } else if(newPosition < this.elevateClawsMaxPosition) {
+    } else if (newPosition < this.elevateClawsMaxPosition) {
       newPosition = this.elevateClawsMaxPosition;
     }
 
@@ -499,6 +430,14 @@ class Claws {
       // Update the current rotation
       this.closeClawsAngle += newRotation;
     }
+  }
+
+  handleCollision(other) {
+    if (other.tag !== "Cargo") {
+      return;
+    }
+    other.object.cargoGroup.position.set(0, -5, 0);
+    this.clawsGroup.add(other.object.cargoGroup);
   }
 
   update() {
@@ -603,7 +542,7 @@ class TopCrane {
   constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.yellow,
-      wireframe: wireframe_value
+      wireframe: wireframeValue
     });
 
     this.clock = new THREE.Clock();
@@ -629,7 +568,7 @@ class TopCrane {
     let supportLines = new SupportLines(material).supportLines;
     supportLines.position.x -= 22.5;
     this.cart = new Cart(camera);
-    
+
     this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, supportLines, this.cart.cartGroup);
 
     document.addEventListener(
@@ -677,12 +616,29 @@ class Tower {
   }
 }
 
+class Cargo {
+  constructor(mesh, colliderRadius) {
+    this.cargoGroup = new THREE.Group();
+    let collider = new Collider(colliderRadius, "Cargo", this);
+    this.cargoGroup.add(mesh, collider.colliderObject);
+
+    this.spawn();
+  }
+
+  spawn() {
+
+  }
+
+  handleCollision(other) {
+  }
+}
+
 class Exterior {
   constructor() {
     this.exteriorGroup = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: wireframe_value
+      wireframe: wireframeValue
     });
     let containerGroup = new THREE.Group();
     let containerSideA = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 1), material);
@@ -698,7 +654,10 @@ class Exterior {
     containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
     containerGroup.position.set(70, 5, 70);
 
-    this.exteriorGroup.add(containerGroup);
+    let cargo = new Cargo(new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), material), 5).cargoGroup;
+    cargo.position.set(10, 0, 40);
+
+    this.exteriorGroup.add(containerGroup, cargo);
   }
 }
 
@@ -708,20 +667,20 @@ class Cart {
     this.clock = new THREE.Clock();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
-      wireframe: wireframe_value
+      wireframe: wireframeValue
     });
-    
+
     let cart = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material);
     this.claws = new Claws(camera);
 
     this.cartGroup.add(cart, this.claws.clawsGroup, this.claws.rope);
-    
+
     this.cartDirection = 0;
     this.cartSpeed = 60;
     this.cartMaxPosition = 90;
     this.cartMinPosition = 22;
     this.cartGroup.position.set(this.cartMinPosition, 89, this.cartGroup.position.z);
-    
+
     document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
   }
 
@@ -742,7 +701,7 @@ class Cart {
   update() {
     this.claws.update();
     let deltaTime = this.clock.getDelta();
-    
+
     if (this.cartDirection !== 0) {
       this.moveCart(this.cartDirection, deltaTime);
     }
@@ -753,7 +712,7 @@ class Crane {
   constructor(camera) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.grey,
-      wireframe: wireframe_value
+      wireframe: wireframeValue
     });
 
     this.craneGroup = new THREE.Group();
@@ -771,47 +730,91 @@ class Crane {
   }
 }
 
+class Collider {
+  constructor(radius, tag, object) {
+    const material = new THREE.MeshBasicMaterial({
+      color: THREE.Color.NAMES.grey,
+      visible: collidersVisible
+    });
+
+    this.radius = radius;
+    this.object = object;
+    this.tag = tag;
+    this.colliderObject = new THREE.Mesh(new THREE.SphereGeometry(radius), material);
+
+    colliders.push(this);
+  }
+
+  handleCollision(other) {
+    this.object.handleCollision(other);
+  }
+}
+
+class ColliderManager {
+  update() {
+    colliders.forEach(colliderA => {
+      colliders.forEach(colliderB => {
+        if (colliderA === colliderB) {
+          return;
+        }
+        let worldPositionA = new THREE.Vector3();
+        colliderA.colliderObject.getWorldPosition(worldPositionA);
+        let worldPositionB = new THREE.Vector3();
+        colliderB.colliderObject.getWorldPosition(worldPositionB);
+
+        if (colliderA.radius + colliderB.radius >= worldPositionA.distanceTo(worldPositionB)) {
+          colliderA.handleCollision(colliderB);
+          colliderB.handleCollision(colliderA);
+        }
+      })
+    });
+  }
+}
+
 class MainScene {
   constructor(crane, exterior, cameras) {
     this.cameras = cameras;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("lightblue");
-    
+
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
-    
+
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     document.body.appendChild(this.renderer.domElement);
-    
+
     this.scene.add(new THREE.AxesHelper(100000));
     this.animate = this.animate.bind(this);
-    
+
     this.scene.add(crane.craneGroup);
     this.scene.add(exterior.exteriorGroup);
     window.addEventListener("resize", this.resize.bind(this));
     document.addEventListener("changeWireframe", this.handleChangeWireframe.bind(this));
+
+    this.colliderManager = new ColliderManager();
   }
   animate() {
     requestAnimationFrame(this.animate);
     crane.update();
+    this.colliderManager.update();
     this.renderer.render(this.scene, this.cameras.currentCamera);
   }
 
   handleChangeWireframe() {
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
-        object.material.wireframe = wireframe_value;
+        object.material.wireframe = wireframeValue;
       }
     });
   }
-  
+
   resize() {
     console.log("Update window");
     const width = window.innerWidth;
     const height = window.innerHeight;
     this.renderer.setSize(width, height);
-    
+
     this.cameras.camerasList.forEach(camera => {
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height;
@@ -820,10 +823,10 @@ class MainScene {
       else {
         const aspect = width / height;
         const frustumHeight = camera.top - camera.bottom;
-        
+
         const newWidth = aspect * frustumHeight;
         const newHeight = frustumHeight;
-        
+
         camera.left = -newWidth / 2;
         camera.right = newWidth / 2;
         camera.top = newHeight / 2;
