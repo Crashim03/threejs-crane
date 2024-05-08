@@ -5,7 +5,7 @@ let wireframeValue = false;
 let collidersVisible = false;
 let colliders = [];
 
-class Input {
+class InputManager {
   constructor() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
     document.addEventListener("keyup", this.handleKeyUp.bind(this));
@@ -21,6 +21,8 @@ class Input {
 
     this.closeClawsPositive = false;
     this.closeClawsNegative = false;
+
+    this.active = true;
   }
 
   handleKeyDown(event) {
@@ -138,11 +140,15 @@ class Input {
       direction = -1;
     }
 
+    if (!this.active) {
+      direction = 0;
+    }
+
     const rotateCraneEvent = new CustomEvent("rotateCraneEvent", {
       detail: { direction: direction },
     });
 
-    console.log("Rotate Crane: " + direction);
+    // console.log("Rotate Crane: " + direction);
     document.dispatchEvent(rotateCraneEvent);
   }
 
@@ -163,10 +169,14 @@ class Input {
       direction = -1;
     }
 
+    if (!this.active) {
+      direction = 0;
+    }
+
     const moveCartEvent = new CustomEvent("moveCartEvent", {
       detail: { direction: direction },
     });
-    console.log("Move Cart: " + direction);
+    // console.log("Move Cart: " + direction);
     document.dispatchEvent(moveCartEvent);
   }
 
@@ -187,10 +197,14 @@ class Input {
       direction = -1;
     }
 
+    if (!this.active) {
+      direction = 0;
+    }
+
     const elevateCranteEvent = new CustomEvent("elevateClawsEvent", {
       detail: { direction: direction },
     });
-    console.log("Elevate Claws: " + direction);
+    // console.log("Elevate Claws: " + direction);
     document.dispatchEvent(elevateCranteEvent);
   }
 
@@ -211,10 +225,14 @@ class Input {
       direction = -1;
     }
 
+    if (!this.active) {
+      direction = 0;
+    }
+
     const closeClawsEvent = new CustomEvent("closeClawsEvent", {
       detail: { direction: direction },
     });
-    console.log("Close Claws: " + direction);
+    // console.log("Close Claws: " + direction);
     document.dispatchEvent(closeClawsEvent);
   }
 }
@@ -312,11 +330,16 @@ class Cameras {
 }
 
 class Claws {
-  constructor(camera) {
+  constructor(camera, cart) {
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
       wireframe: wireframeValue
     });
+
+    this.cart = cart;
+    this.pickUp = false;
+    this.drop = false;
+    this.cargo = null;
 
     this.clawsGroup = new THREE.Group();
 
@@ -420,24 +443,57 @@ class Claws {
   closeClaws(direction, deltaTime) {
     let newRotation = direction * deltaTime * this.closeClawsSpeed;
 
-    // Check if the new rotation is within the desired range
     if (this.closeClawsAngle + newRotation < this.closeClawsMaxAngle && this.closeClawsAngle + newRotation > this.closeClawsMinAngle) {
       this.claws1.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
       this.claws2.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
       this.claws3.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
       this.claws4.rotateOnAxis(new THREE.Vector3(1, 0, 0), newRotation);
 
-      // Update the current rotation
       this.closeClawsAngle += newRotation;
     }
   }
 
   handleCollision(other) {
-    if (other.tag !== "Cargo") {
+    if (other.tag !== "Cargo" || other.object.pickedUp) {
       return;
     }
     other.object.cargoGroup.position.set(0, -5, 0);
+    other.object.pickedUp = true;
     this.clawsGroup.add(other.object.cargoGroup);
+
+    inputManager.active = false;
+    this.pickUp = true;
+    this.cargo = other;
+  }
+
+  pickUpAnimation(deltaTime) {
+    if (this.closeClawsAngle + deltaTime * this.closeClawsSpeed < this.closeClawsMaxAngle) {
+      this.closeClaws(1, deltaTime)
+      return;
+    }
+
+    this.elevateClaws(1, deltaTime);
+    if (this.clawsGroup.position.y >= this.elevateClawsMinPosition) {
+      this.cart.pickUp = true;
+      this.pickUp = false;
+    }
+  }
+
+  dropAnimation(deltaTime) {
+    if (this.clawsGroup.position.y - this.elevateClawsSpeed * deltaTime > this.elevateClawsMaxPosition  + 10) {
+      console.log("Dropping cargo...");
+      this.elevateClaws(-1, deltaTime);
+      return;
+    }
+
+    this.closeClaws(-1, deltaTime);
+    console.log("Opening claws...", this.closeClawsAngle, this.closeClawsMinAngle);
+    if (this.closeClawsAngle - deltaTime * this.closeClawsSpeed <= this.closeClawsMinAngle) {
+      this.drop = false;
+      inputManager.active = true;
+      this.cargo.object.cargoGroup.position.set(0, 5, 0);
+      exterior.containerGroup.add(this.cargo.object.cargoGroup);
+    }
   }
 
   update() {
@@ -449,6 +505,14 @@ class Claws {
 
     if (this.closeClawsDirection !== 0) {
       this.closeClaws(this.closeClawsDirection, deltaTime);
+    }
+
+    if (this.pickUp) {
+      this.pickUpAnimation(deltaTime);
+    }
+
+    if (this.drop) {
+      this.dropAnimation(deltaTime);
     }
   }
 }
@@ -544,14 +608,25 @@ class TopCrane {
       color: THREE.Color.NAMES.yellow,
       wireframe: wireframeValue
     });
+    this.pickUp = false;
 
     this.clock = new THREE.Clock();
     this.rotateDirection = 0;
-    this.rotationSpeed = 2;
-
+    this.rotationSpeed = 1.5;
+    
     this.topCraneGroup = new THREE.Group();
-
+    
     this.topCraneGroup.position.set(22.5, 0, 0);
+    
+    let containerDirection3D = new THREE.Vector3();
+    this.topCraneGroup.getWorldPosition(containerDirection3D);
+
+    let worldPositionContainer = new THREE.Vector3();
+    exterior.containerGroup.getWorldPosition(worldPositionContainer);
+
+    containerDirection3D.add(worldPositionContainer.negate())
+    this.containerDirection = new THREE.Vector2(containerDirection3D.x, containerDirection3D.z);
+    this.containerDirection.normalize().negate();
 
     let cabine = new Cabine(material).cabine;
     cabine.position.x -= 15;
@@ -567,7 +642,7 @@ class TopCrane {
     mainLine.position.x -= 22.5;
     let supportLines = new SupportLines(material).supportLines;
     supportLines.position.x -= 22.5;
-    this.cart = new Cart(camera);
+    this.cart = new Cart(camera, this);
 
     this.topCraneGroup.add(cabine, counterJib, jib, towerPeak, backLine, mainLine, supportLines, this.cart.cartGroup);
 
@@ -588,12 +663,43 @@ class TopCrane {
     );
   }
 
+  pickUpAnimation(deltaTime) {
+    let currentDirection3D = new THREE.Vector3();
+    this.topCraneGroup.getWorldPosition(currentDirection3D);
+
+    let worldPositionCart = new THREE.Vector3();
+    this.cart.cartGroup.getWorldPosition(worldPositionCart);
+
+    currentDirection3D.add(worldPositionCart.negate());
+
+    let currentDirection = new THREE.Vector2(currentDirection3D.x, currentDirection3D.z);
+    currentDirection.normalize().negate();
+
+    let angle = currentDirection.angleTo(this.containerDirection);
+    
+    if (angle > 0.03) {
+      let angleDirection = -1;
+  
+      if (currentDirection.x * this.containerDirection.y - currentDirection.y * this.containerDirection.x < 0) {
+        angleDirection = 1;
+      }
+      this.rotateCrane(angleDirection, deltaTime);
+    } else {
+      this.pickUp = false;
+      this.cart.drop = true;
+    }
+  }
+
   update() {
     this.cart.update()
 
     let deltaTime = this.clock.getDelta();
     if (this.rotateDirection !== 0) {
       this.rotateCrane(this.rotateDirection, deltaTime);
+    }
+
+    if (this.pickUp) {
+      this.pickUpAnimation(deltaTime);
     }
   }
 }
@@ -676,15 +782,18 @@ class Cargo {
     this.cargoGroup = new THREE.Group();
     let collider = new Collider(colliderRadius, "Cargo", this);
     this.cargoGroup.add(mesh, collider.colliderObject);
-
+    this.pickedUp = false;
     this.spawn();
   }
 
   spawn() {
-
+    // TODO: 
   }
 
   handleCollision(other) {
+    if (!this.pickedUp && (other.tag === "Crane" || other.tag === "Cargo")) {
+      this.spawn();
+    }
   }
 }
 
@@ -695,7 +804,7 @@ class Exterior {
       color: THREE.Color.NAMES.chocolate,
       wireframe: wireframeValue
     });
-    let containerGroup = new THREE.Group();
+    this.containerGroup = new THREE.Group();
     let containerSideA = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 2), material);
     let containerSideB = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 2), material);
     let containerSideC = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 40), material);
@@ -706,8 +815,8 @@ class Exterior {
     containerSideC.position.set(19, 0, 0);
     containerSideD.position.set(-19, 0, 0);
     containerBottom.position.set(0, -8, 0);
-    containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
-    containerGroup.position.set(70, 5, 70);
+    this.containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
+    this.containerGroup.position.set(70, 5, 70);
 
     let cargoGroup = new THREE.Group();
 
@@ -730,12 +839,12 @@ class Exterior {
     cargoGroup.add(cargoCube, cargoDodecahedron, cargoIcosahedron, cargoTorus, cargoTorusKnot);
 
 
-    this.exteriorGroup.add(containerGroup, cargoGroup);
+    this.exteriorGroup.add(this.containerGroup, cargoGroup);
   }
 }
 
 class Cart {
-  constructor(camera) {
+  constructor(camera, topCrane) {
     this.cartGroup = new THREE.Group();
     this.clock = new THREE.Clock();
     const material = new THREE.MeshBasicMaterial({
@@ -743,8 +852,10 @@ class Cart {
       wireframe: wireframeValue
     });
 
+    this.drop = false;
+
     let cart = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 5), material);
-    this.claws = new Claws(camera);
+    this.claws = new Claws(camera, topCrane);
 
     this.cartGroup.add(cart, this.claws.clawsGroup, this.claws.rope);
 
@@ -777,6 +888,29 @@ class Cart {
 
     if (this.cartDirection !== 0) {
       this.moveCart(this.cartDirection, deltaTime);
+    }
+
+    if (this.drop) {
+      this.pickUpAnimation(deltaTime);
+    }
+  }
+
+  pickUpAnimation(deltaTime) {
+    let worldPositionCart3D = new THREE.Vector3();
+    this.cartGroup.getWorldPosition(worldPositionCart3D);
+    let worldPositionCart = new THREE.Vector2(worldPositionCart3D.x, worldPositionCart3D.z);
+
+    let worldPositionContainer3D = new THREE.Vector3();
+    exterior.containerGroup.getWorldPosition(worldPositionContainer3D);
+    let worldPositionContainer = new THREE.Vector2(worldPositionContainer3D.x, worldPositionContainer3D.z);
+    let distance = worldPositionCart.distanceTo(worldPositionContainer);
+
+    if (distance > 5) {
+      console.log("Moving cart to container...");
+      this.moveCart(distance / Math.abs(distance), deltaTime);
+    } else {
+      this.drop = false;
+      this.claws.drop = true;
     }
   }
 }
@@ -910,9 +1044,9 @@ class MainScene {
   }
 }
 
-new Input();
+let inputManager = new InputManager();
 let cameras = new Cameras();
-let crane = new Crane(cameras.camerasList[5]);
 let exterior = new Exterior();
+let crane = new Crane(cameras.camerasList[5]);
 let mainScene = new MainScene(crane, exterior, cameras);
 mainScene.animate();
