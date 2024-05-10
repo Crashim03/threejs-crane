@@ -357,7 +357,7 @@ class Claws {
     this.collider = new Collider(17, "Claws", this).colliderObject;
     this.collider.position.set(0, -3, 0);
 
-    this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), material);
+    this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1), material);
     this.rope.scale.set(1, this.elevateClawsMinPosition, 1);
     this.rope.position.set(this.rope.position.x, this.elevateClawsMinPosition / 2.5 + 1, this.rope.position.z);
 
