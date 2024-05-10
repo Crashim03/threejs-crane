@@ -1,5 +1,6 @@
+
 import * as THREE from "three";
-// 'use strict';
+//'use strict';
 
 let wireframeValue = false;
 let collidersVisible = false;
@@ -7,22 +8,22 @@ let colliders = [];
 
 class InputManager {
   constructor() {
-    document.addEventListener("keydown", this.handleKeyDown.bind(this));
-    document.addEventListener("keyup", this.handleKeyUp.bind(this));
-
-    this.rotateCranePositive = false;
-    this.rotateCraneNegative = false;
-
-    this.moveCartPositive = false;
-    this.moveCartNegative = false;
-
-    this.elevateCranePositive = false;
-    this.elevateCraneNegative = false;
-
-    this.closeClawsPositive = false;
-    this.closeClawsNegative = false;
-
-    this.active = true;
+    document.addEventListener("keydown", this.handleKeyDown.bind(this));                                        
+    document.addEventListener("keyup", this.handleKeyUp.bind(this));                                        
+                                          
+    this.rotateCranePositive = false;                                       
+    this.rotateCraneNegative = false;                                       
+                                          
+    this.moveCartPositive = false;                                        
+    this.moveCartNegative = false;                                        
+                                          
+    this.elevateCranePositive = false;                                        
+    this.elevateCraneNegative = false;                                        
+                                          
+    this.closeClawsPositive = false;                                        
+    this.closeClawsNegative = false;                                        
+                                          
+    this.active = true;                                       
   }
 
   handleKeyDown(event) {
@@ -282,10 +283,10 @@ class Cameras {
     topCamera.lookAt(0, 0, 0);
 
     const fixedOrtCamera = new THREE.OrthographicCamera(
-      (-frustumSize * aspect) / 2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
+      (-frustumSize * aspect) / 1.5,
+      (frustumSize * aspect) / 1.5,
+      frustumSize / 1.5,
+      frustumSize / -1.5,
       1,
       1000
     );
@@ -360,8 +361,6 @@ class Claws {
     this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1), material);
     this.rope.scale.set(1, this.elevateClawsMinPosition, 1);
     this.rope.position.set(this.rope.position.x, this.elevateClawsMinPosition / 2.5 + 1, this.rope.position.z);
-
-    this.clock = new THREE.Clock();
 
     let height = 4;
 
@@ -454,7 +453,7 @@ class Claws {
   }
 
   handleCollision(other) {
-    if (other.tag !== "Cargo" || other.object.pickedUp) {
+    if (other.tag !== "Cargo" || other.object.pickedUp || this.pickUp) {
       return;
     }
     other.object.cargoGroup.position.set(0, -5, 0);
@@ -481,13 +480,11 @@ class Claws {
 
   dropAnimation(deltaTime) {
     if (this.clawsGroup.position.y - this.elevateClawsSpeed * deltaTime > this.elevateClawsMaxPosition  + 10) {
-      console.log("Dropping cargo...");
       this.elevateClaws(-1, deltaTime);
       return;
     }
 
     this.closeClaws(-1, deltaTime);
-    console.log("Opening claws...", this.closeClawsAngle, this.closeClawsMinAngle);
     if (this.closeClawsAngle - deltaTime * this.closeClawsSpeed <= this.closeClawsMinAngle) {
       this.drop = false;
       inputManager.active = true;
@@ -496,9 +493,7 @@ class Claws {
     }
   }
 
-  update() {
-    let deltaTime = this.clock.getDelta();
-
+  update(deltaTime) {
     if (this.elevateClawsDirection !== 0) {
       this.elevateClaws(this.elevateClawsDirection, deltaTime);
     }
@@ -610,7 +605,6 @@ class TopCrane {
     });
     this.pickUp = false;
 
-    this.clock = new THREE.Clock();
     this.rotateDirection = 0;
     this.rotationSpeed = 1.5;
     
@@ -690,10 +684,8 @@ class TopCrane {
     }
   }
 
-  update() {
-    this.cart.update()
-
-    let deltaTime = this.clock.getDelta();
+  update(deltaTime) {
+    this.cart.update(deltaTime)
     if (this.rotateDirection !== 0) {
       this.rotateCrane(this.rotateDirection, deltaTime);
     }
@@ -713,12 +705,15 @@ class Base {
 
 class Tower {
   constructor(material) {
-    this.tower = new THREE.Mesh(
+    this.towerGroup = new THREE.Group();
+    let towerObject= new THREE.Mesh(
       new THREE.CylinderGeometry(5, 5, 90, 3),
       material
     );
-    this.tower.position.set(23.5, 45, 0);
-    this.tower.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
+    towerObject.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 6);
+
+    this.towerGroup.add(towerObject);
+    this.towerGroup.position.set(23.5, 45, 0);
   }
 }
 
@@ -729,7 +724,7 @@ class CargoCube {
       color: THREE.Color.NAMES.red,
       wireframe: wireframeValue
     });
-    this.cargoCube = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), material);
+    this.cargoCube = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), material);
   }
 }
 
@@ -773,7 +768,7 @@ class CargoTorusKnot {
       color: THREE.Color.NAMES.violet,
       wireframe: wireframeValue
     });
-    this.cargoTorusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(3.33, 1), material);
+    this.cargoTorusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.7, 1), material);
   }
 }
 
@@ -783,15 +778,44 @@ class Cargo {
     let collider = new Collider(colliderRadius, "Cargo", this);
     this.cargoGroup.add(mesh, collider.colliderObject);
     this.pickedUp = false;
+    this.colliderRadius = colliderRadius;
     this.spawn();
   }
 
   spawn() {
-    // TODO: 
+    let radius_outer_limit = 90;
+    let radius_inner_limit = 20;
+    let spawn_center = (23.5, 0);
+
+    // generate random angle
+    let angle = Math.random() * 2 * Math.PI;
+
+    // generate random radius
+    let radius;
+
+  while ((radius = Math.random() * (radius_outer_limit - this.colliderRadius)) < radius_inner_limit) {
+      radius = Math.random() * radius_outer_limit;
+    }
+
+    // convert polar to Cartesian coordinates
+    let x = radius * Math.cos(angle);
+    let z = radius * Math.sin(angle);
+
+    let distance = this.calculateDistance(x, z, spawn_center);
+    // y-coordinate can be set to 0 if you're working in the xOz plane
+    while (distance + this.colliderRadius < Math.pow(radius_inner_limit, 2)) {
+      distance = this.calculateDistance(x, z, spawn_center);
+    } 
+
+    this.cargoGroup.position.set(x, this.colliderRadius, z);
+  }
+
+  calculateDistance(x, z, spawn_center) {
+    return (new THREE.Vector2(x, z).distanceToSquared(new THREE.Vector2(spawn_center[0], spawn_center[1])));
   }
 
   handleCollision(other) {
-    if (!this.pickedUp && (other.tag === "Crane" || other.tag === "Cargo")) {
+    if (!this.pickedUp && (other.tag === "Crane" || other.tag === "Cargo" || other.tag === "Container")) {
       this.spawn();
     }
   }
@@ -815,38 +839,68 @@ class Exterior {
     containerSideC.position.set(19, 0, 0);
     containerSideD.position.set(-19, 0, 0);
     containerBottom.position.set(0, -8, 0);
-    this.containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom);
-    this.containerGroup.position.set(70, 5, 70);
+    
+    this.containerRadius = 25;
+    let containerCollider = new Collider(this.containerRadius, "Container", this);
+    this.containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom, containerCollider.colliderObject);
+
+    let radius_outer_limit = 80;
+    let radius_inner_limit = 25;
+    let spawn_center = (23.5, 0);
+
+    // generate random angle
+    let angle = Math.random() * 2 * Math.PI;
+
+    // generate random radius
+    let radius;
+
+    while ((radius = Math.random() * (radius_outer_limit)) < radius_inner_limit) {
+      radius = Math.random() * radius_outer_limit;
+    }
+
+    // convert polar to Cartesian coordinates
+    let x = radius * Math.cos(angle);
+    let z = radius * Math.sin(angle);
+
+    let distance = this.calculateDistance(x, z, spawn_center);
+
+    // y-coordinate can be set to 0 if you're working in the xOz plane
+    while (distance < Math.pow(radius_inner_limit, 2)) {
+      distance = this.calculateDistance(x, z, spawn_center);
+    } 
+
+    this.containerGroup.position.set(x, 10, z);
 
     let cargoGroup = new THREE.Group();
 
     let cargoCube = new Cargo(new CargoCube().cargoCube, 5).cargoGroup;
-    cargoCube.position.set(10, 0, 40);
 
     let cargoDodecahedron = new Cargo(new CargoDodecahedron().cargoDodecahedron, 5).cargoGroup;
-    cargoDodecahedron.position.set(40, 0, 40);
     
     let cargoIcosahedron = new Cargo(new CargoIcosahedron().cargoIcosahedron, 5).cargoGroup;
-    cargoIcosahedron.position.set(70, 0, 40);
 
     let cargoTorus = new Cargo(new CargoTorus().cargoTorus, 5).cargoGroup;
-    cargoTorus.position.set(100, 0, 40);
     
     let cargoTorusKnot = new Cargo(new CargoTorusKnot().cargoTorusKnot, 5).cargoGroup;
-    cargoTorusKnot.position.set(130, 0, 40);
     
     
     cargoGroup.add(cargoCube, cargoDodecahedron, cargoIcosahedron, cargoTorus, cargoTorusKnot);
 
-
     this.exteriorGroup.add(this.containerGroup, cargoGroup);
+  }
+
+  calculateDistance(x, z, spawn_center) {
+    return (new THREE.Vector2(x, z).distanceToSquared(new THREE.Vector2(spawn_center[0], spawn_center[1])));
+  }
+
+  handleCollision(other) {
+    
   }
 }
 
 class Cart {
   constructor(camera, topCrane) {
     this.cartGroup = new THREE.Group();
-    this.clock = new THREE.Clock();
     const material = new THREE.MeshBasicMaterial({
       color: THREE.Color.NAMES.green,
       wireframe: wireframeValue
@@ -882,10 +936,8 @@ class Cart {
     this.cartGroup.position.set(nextPosition, this.cartGroup.position.y, this.cartGroup.position.z);
   }
 
-  update() {
-    this.claws.update();
-    let deltaTime = this.clock.getDelta();
-
+  update(deltaTime) {
+    this.claws.update(deltaTime);
     if (this.cartDirection !== 0) {
       this.moveCart(this.cartDirection, deltaTime);
     }
@@ -896,17 +948,20 @@ class Cart {
   }
 
   pickUpAnimation(deltaTime) {
-    let worldPositionCart3D = new THREE.Vector3();
-    this.cartGroup.getWorldPosition(worldPositionCart3D);
-    let worldPositionCart = new THREE.Vector2(worldPositionCart3D.x, worldPositionCart3D.z);
+    // FIX: it only goes forward
+    let cartPosition = new THREE.Vector2(this.cartGroup.position.x, this.cartGroup.position.z);
+    let cartDistance = cartPosition.distanceToSquared(new THREE.Vector2(0, 0));
 
     let worldPositionContainer3D = new THREE.Vector3();
     exterior.containerGroup.getWorldPosition(worldPositionContainer3D);
     let worldPositionContainer = new THREE.Vector2(worldPositionContainer3D.x, worldPositionContainer3D.z);
-    let distance = worldPositionCart.distanceTo(worldPositionContainer);
+    let containerDistance = worldPositionContainer.distanceToSquared(new THREE.Vector2(crane.tower.position.x, crane.tower.position.z));
 
-    if (distance > 5) {
-      console.log("Moving cart to container...");
+    let distance = containerDistance - cartDistance;
+    
+    if (Math.abs(distance) > Math.pow(5, 2)) {
+      
+      console.log(distance);
       this.moveCart(distance / Math.abs(distance), deltaTime);
     } else {
       this.drop = false;
@@ -925,15 +980,15 @@ class Crane {
     this.craneGroup = new THREE.Group();
 
     let base = new Base(material).base;
-    let tower = new Tower(material).tower;
+    this.tower = new Tower(material).towerGroup;
 
     this.topCrane = new TopCrane(camera);
 
-    this.craneGroup.add(base, tower, this.topCrane.topCraneGroup);
+    this.craneGroup.add(base, this.tower, this.topCrane.topCraneGroup);
   }
 
-  update() {
-    this.topCrane.update();
+  update(deltaTime) {
+    this.topCrane.update(deltaTime);
   }
 }
 
@@ -969,7 +1024,7 @@ class ColliderManager {
         let worldPositionB = new THREE.Vector3();
         colliderB.colliderObject.getWorldPosition(worldPositionB);
 
-        if (colliderA.radius + colliderB.radius >= worldPositionA.distanceTo(worldPositionB)) {
+        if (Math.pow(colliderA.radius + colliderB.radius, 2) >= worldPositionA.distanceToSquared(worldPositionB)) {
           colliderA.handleCollision(colliderB);
           colliderB.handleCollision(colliderA);
         }
@@ -983,6 +1038,7 @@ class MainScene {
     this.cameras = cameras;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("lightblue");
+    this.clock = new THREE.Clock();
 
     let SCREEN_WIDTH = window.innerWidth;
     let SCREEN_HEIGHT = window.innerHeight;
@@ -1002,18 +1058,26 @@ class MainScene {
     this.colliderManager = new ColliderManager();
   }
   animate() {
+    let deltaTime = this.clock.getDelta();
     requestAnimationFrame(this.animate);
-    crane.update();
-    this.colliderManager.update();
+    this.colliderManager.update(deltaTime);
+    crane.update(deltaTime);
     this.renderer.render(this.scene, this.cameras.currentCamera);
   }
-
+ 
+  // TODO
   handleChangeWireframe() {
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        object.material.wireframe = wireframeValue;
-      }
-    });
+    this.changeWireFrame(this.scene);
+  }
+
+  changeWireFrame(object){
+    if (object instanceof THREE.Mesh) {
+      object.material.wireframe = wireframeValue;
+    } else {
+      object.children.forEach(child => {
+        this.changeWireFrame(child);
+      });
+    }
   }
 
   resize() {
