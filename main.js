@@ -315,7 +315,7 @@ class Cameras {
       "switchCameraEvent",
       this.handleSwitchCamera.bind(this)
     );
-
+    document.getElementById('cameraID').innerText = 'Current camera: 1';
   }
 
   handleSwitchCamera(event) {
@@ -326,6 +326,7 @@ class Cameras {
       return;
     }
 
+    document.getElementById('cameraID').innerText = 'Current camera: ' + event.detail.camera;
     this.currentCamera = this.camerasList[event.detail.camera - 1];
     console.log("Switched to camera: " + event.detail.camera);
   }
