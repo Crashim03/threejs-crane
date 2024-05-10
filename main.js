@@ -9,7 +9,7 @@ let colliders = [];
 class InputManager {
   constructor() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));                                        
-    document.addEventListener("keyup", this.handleKeyUp.bind(this));                                        
+    document.addEventListener("keyup", this.handleKeyUp.bind(this));    
                                           
     this.rotateCranePositive = false;                                       
     this.rotateCraneNegative = false;                                       
@@ -25,6 +25,7 @@ class InputManager {
                                           
     this.active = true;                                       
   }
+
 
   handleKeyDown(event) {
     switch (event.code) {
@@ -463,6 +464,11 @@ class Claws {
     inputManager.active = false;
     this.pickUp = true;
     this.cargo = other;
+    this.elevateClawsDirection = 0;
+    this.closeClawsDirection = 0;
+
+    const stopMovingEvent = new CustomEvent("stopMoving");
+    document.dispatchEvent(stopMovingEvent);
   }
 
   pickUpAnimation(deltaTime) {
@@ -644,6 +650,11 @@ class TopCrane {
       "rotateCraneEvent",
       this.handleRotateCrane.bind(this)
     );
+    document.addEventListener("stopMoving", this.handleStopMoving.bind(this));
+  }
+
+  handleStopMoving() {
+    this.rotateDirection = 0;
   }
 
   handleRotateCrane(event) {
@@ -845,7 +856,7 @@ class Exterior {
     this.containerGroup.add(containerSideA, containerSideB, containerSideC, containerSideD, containerBottom, containerCollider.colliderObject);
 
     let radius_outer_limit = 80;
-    let radius_inner_limit = 25;
+    let radius_inner_limit = 30;
     let spawn_center = (23.5, 0);
 
     // generate random angle
