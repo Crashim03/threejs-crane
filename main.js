@@ -931,6 +931,11 @@ class Cart {
     this.cartGroup.position.set(this.cartMinPosition, 89, this.cartGroup.position.z);
 
     document.addEventListener("moveCartEvent", this.handleMoveCart.bind(this));
+    document.addEventListener("stopMoving", this.handleStopMoving.bind(this));
+  }
+
+  handleStopMoving() {
+    this.cartDirection = 0;
   }
 
   handleMoveCart(event) {
@@ -959,7 +964,6 @@ class Cart {
   }
 
   pickUpAnimation(deltaTime) {
-    // FIX: it only goes forward
     let cartPosition = new THREE.Vector2(this.cartGroup.position.x, this.cartGroup.position.z);
     let cartDistance = cartPosition.distanceToSquared(new THREE.Vector2(0, 0));
 
@@ -970,7 +974,7 @@ class Cart {
 
     let distance = containerDistance - cartDistance;
     
-    if (Math.abs(distance) > Math.pow(5, 2)) {
+    if (Math.abs(distance) > Math.pow(10, 2)) {
       
       console.log(distance);
       this.moveCart(distance / Math.abs(distance), deltaTime);
@@ -1076,7 +1080,6 @@ class MainScene {
     this.renderer.render(this.scene, this.cameras.currentCamera);
   }
  
-  // TODO
   handleChangeWireframe() {
     this.changeWireFrame(this.scene);
   }
