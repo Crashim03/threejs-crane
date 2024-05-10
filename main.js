@@ -974,7 +974,7 @@ class Cart {
 
     let distance = containerDistance - cartDistance;
     
-    if (Math.abs(distance) > Math.pow(10, 2)) {
+    if (Math.abs(distance) > Math.pow(15, 2)) {
       
       console.log(distance);
       this.moveCart(distance / Math.abs(distance), deltaTime);
