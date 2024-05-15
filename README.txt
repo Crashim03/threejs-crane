@@ -1,4 +1,5 @@
-Esforço:
-Alexandre Duarte -> 10 horas
-Salvador Correia -> 10 horas
-João Nogueira    -> 10 horas
+Use the following keys to move the crane:
+Q A
+W S
+E D
+R F
